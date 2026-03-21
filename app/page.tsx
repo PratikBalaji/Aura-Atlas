@@ -17,6 +17,8 @@ import {
 } from "@/lib/types";
 import { generateSeedCheckins } from "@/lib/seedCheckins";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import ThermalMoodMatrix from "@/components/ThermalMoodMatrix";
+import { ALL_COLLEGES } from "@/lib/collegeList";
 
 const Map3DView = dynamic(() => import("@/components/Map3DView"), {
   ssr: false,
@@ -50,6 +52,24 @@ export default function Home() {
   const userLocation = useUserLocation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [locateMeTrigger, setLocateMeTrigger] = useState(0);
+
+  const [currentTime, setCurrentTime] = useState<{ time: string; period: string; date: string }>({
+    time: "00:00:00",
+    period: "PM",
+    date: ""
+  });
+
+  // NEW: Navigation & AR States moved from Map3DView
+  const [isARModeActive, setIsARModeActive] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedCampusName, setSelectedCampusName] = useState<string>(() =>
+    typeof window !== 'undefined'
+      ? localStorage.getItem('aura_campus') || "Temple University"
+      : "Temple University"
+  );
+  
+  const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
+  const [isDroppingMode, setIsDroppingMode] = useState(false);
 
   const fetchCheckins = useCallback(async () => {
     try {
@@ -195,6 +215,48 @@ export default function Home() {
     };
   }, [registeredCollege?.id]);
 
+  // NEW: Clock Ticking Logic (City-Aware)
+  useEffect(() => {
+    const tzMap: Record<string, string> = {
+      'New York City': 'America/New_York',
+      'Philadelphia': 'America/New_York',
+      'Chicago': 'America/Chicago',
+      'Houston': 'America/Chicago',
+      'Los Angeles': 'America/Los_Angeles',
+      'Phoenix': 'America/Phoenix',
+      'Dallas': 'America/Chicago',
+      'San Diego': 'America/Los_Angeles',
+      'Jacksonville': 'America/New_York',
+      'San Antonio': 'America/Chicago',
+      'Charlottesville': 'America/New_York'
+    };
+
+    const tick = () => {
+      const tz = tzMap[city.name] || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { 
+        timeZone: tz, 
+        hour12: true, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      });
+      const dateStr = now.toLocaleDateString('en-US', { 
+        timeZone: tz, 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      const [timePart, period] = timeStr.split(' ');
+      setCurrentTime({ time: timePart, period, date: dateStr });
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [city.name]);
+
   // Keyboard navigation
   useEffect(() => {
     setIsCampusMode(false);
@@ -274,6 +336,12 @@ export default function Home() {
           userLongitude={userLocation.longitude}
           userAccuracy={userLocation.accuracy}
           locateMeTrigger={locateMeTrigger}
+          isARModeActive={isARModeActive}
+          setIsARModeActive={setIsARModeActive}
+          selectedCampusName={selectedCampusName}
+          setSelectedCampusName={setSelectedCampusName}
+          isDroppingMode={isDroppingMode}
+          setIsDroppingMode={setIsDroppingMode}
         />
 
         {/* HUD Moved to Bottom-Center so it NEVER blocks the City Changer */}
@@ -318,24 +386,157 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Local Clock */}
-        <div className="pointer-events-none absolute bottom-6 left-6 z-[45]">
-          <LocalClock selectedCity={city.name} selectedState={city.state} />
+        {/* 🕒 THE MINIMALIST HUD (Bottom-Left) */}
+        <div className="absolute bottom-10 left-6 z-[50] flex items-end gap-6 pointer-events-none">
+          
+          {/* Left Side: Clock + Thermal */}
+          <div className="flex flex-col gap-1">
+            {/* 1. SEAMLESS CLOCK */}
+            <div className="flex items-baseline gap-1 drop-shadow-lg">
+              <h1 className="text-5xl font-black text-white/90 tracking-tighter tabular-nums">
+                {currentTime.time}
+              </h1>
+              <span className="text-lg font-medium text-white/50 uppercase ml-1">{currentTime.period}</span>
+            </div>
+
+            {/* 2. THERMAL RADAR */}
+            <div className="pointer-events-auto mt-2">
+              <ThermalMoodMatrix 
+                onToggle={setShowThermalRadar} 
+                lat={city.lat} 
+                lng={city.lng} 
+              />
+            </div>
+          </div>
+
+          {/* Vertical Divider */}
+          <div className="w-px h-16 bg-white/10 mb-2 invisible sm:visible" />
+
+          {/* Right Side: Integrated Buttons */}
+          <div className="flex flex-col gap-2 mb-2 pointer-events-auto">
+            {/* 1. Integrated 'Locate Me' Pill */}
+            {userLocation.latitude !== null && (
+              <button 
+                onClick={() => setLocateMeTrigger(n => n + 1)}
+                className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-white/70 hover:text-white hover:bg-black/60 hover:border-white/30 transition-all shadow-2xl group"
+              >
+                <span className="text-[10px] font-bold tracking-widest uppercase mt-[1px]">
+                  Locate Me
+                </span>
+                <span className="text-sm group-hover:scale-110 transition-transform">
+                  📍
+                </span>
+              </button>
+            )}
+
+            {/* 2. Anon Check-In Button */}
+            <button 
+              onClick={() => setIsDroppingMode(!isDroppingMode)}
+              className={`flex items-center justify-between gap-3 px-4 py-2 rounded-full border transition-all duration-300 backdrop-blur-xl ${
+                isDroppingMode 
+                  ? "bg-purple-900/40 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]" 
+                  : "bg-black/40 border-white/10 hover:border-purple-500/50 hover:bg-black/60"
+              }`}
+            >
+              <span className={`text-[10px] font-bold tracking-widest uppercase ${isDroppingMode ? "text-purple-300" : "text-white/70"}`}>
+                Anon Check-In
+              </span>
+              <span className={`text-sm ${isDroppingMode ? "animate-pulse drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]" : "opacity-70 grayscale"}`}>
+                ✈️
+              </span>
+            </button>
+          </div>
+
         </div>
 
-        {/* Locate Me button */}
-        {userLocation.latitude !== null && (
-          <button
-            onClick={() => setLocateMeTrigger((n) => n + 1)}
-            className="pointer-events-auto absolute bottom-6 right-6 z-[50] flex items-center gap-2 rounded-full border border-[rgba(66,133,244,0.4)] bg-[rgba(15,23,42,0.85)] px-4 py-2.5 text-xs font-semibold text-[#60a5fa] shadow-lg backdrop-blur-md transition-all hover:border-[rgba(66,133,244,0.7)] hover:bg-[rgba(66,133,244,0.15)] hover:text-white"
-          >
-            📍 Locate Me
-          </button>
-        )}
+        {/* 🧭 NAVIGATION CONTROLS (Bottom-Right) */}
+        <div className="absolute bottom-10 right-6 z-[50] flex flex-col items-end gap-3 pointer-events-auto">
+          
+          {/* 🏫 COMPACT CAMPUS SELECTOR & TOOLS */}
+          <div className="flex flex-col items-end gap-3">
+            
+            {/* 1. The Sliding List (Visible when isDrawerOpen is true) */}
+            <div className={`flex flex-col gap-2 transition-all duration-500 ease-in-out origin-bottom ${
+              isDrawerOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95 pointer-events-none'
+            }`}>
+              {ALL_COLLEGES
+                .filter((uni) => uni.city === (city.name === "New York City" ? "New York City" : city.name) && uni.name !== selectedCampusName)
+                .map((uni) => (
+                  <button
+                    key={uni.name}
+                    onClick={() => {
+                      setLocateMeTrigger(n => n + 1); // Trigger a re-center if handled by Map3DView for campus
+                      // Note: We need a way to fly to the uni. 
+                      // For now, updating state will let Map3DView handle if it reacts to selectedCampusName
+                      setSelectedCampusName(uni.name);
+                      localStorage.setItem('aura_campus', uni.name);
+                      setIsDrawerOpen(false);
+                    }}
+                    className="flex items-center gap-3 bg-black/60 hover:bg-black/80 backdrop-blur-md p-2 pr-4 rounded-xl border border-white/10 text-white transition-all shadow-xl group"
+                  >
+                    <div className="w-6 h-6 flex items-center justify-center bg-white/5 rounded-md overflow-hidden">
+                      <img 
+                        src={`https://img.logo.dev/${uni.domain}?token=pk_VG_5jIWbQH2FsoADC0Lfqw&size=128`} 
+                        className="w-5 h-5 object-contain"
+                        alt=""
+                        onError={(e) => {
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${uni.name.charAt(0)}&background=random&color=fff`;
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-indigo-300 transition-colors">
+                      {uni.name}
+                    </span>
+                  </button>
+                ))}
+            </div>
+
+            {/* 2. The Main Trigger (Switch Campus / Home Campus) */}
+            <button
+              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+              className={`bg-indigo-600 hover:bg-indigo-500 text-white p-2 pr-4 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] border border-indigo-400/30 transition-all flex items-center gap-3 ${
+                isDrawerOpen ? 'ring-2 ring-white scale-105' : ''
+              }`}
+            >
+              <div className="bg-white/10 p-1.5 rounded-lg">
+                <img 
+                  src={`https://img.logo.dev/${userCampus?.domain}?token=pk_VG_5jIWbQH2FsoADC0Lfqw&size=128`} 
+                  className="w-7 h-7 object-contain"
+                  alt="Home"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${userCampus?.name?.charAt(0) || 'H'}&background=random&color=fff`;
+                  }}
+                />
+              </div>
+              <span className="text-xs font-black tracking-tighter uppercase">
+                {isDrawerOpen ? "CLOSE SELECTOR" : "SWITCH CAMPUS"}
+              </span>
+            </button>
+
+            {/* 3. Aura Lens Trigger Button */}
+            <button
+              onClick={() => setIsARModeActive(true)}
+              className="bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white font-bold py-2.5 px-4 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400/30 transition-all flex items-center gap-2"
+            >
+              <span className="text-lg">👁️</span> Aura Lens
+            </button>
+
+            {/* 4. Cinematic Button */}
+            <button
+              onClick={() => setIsSpinning(!isSpinning)}
+              className="bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white p-2.5 rounded-xl shadow-lg border border-indigo-400/30 transition-all flex items-center justify-center"
+            >
+              <span className="text-lg">🔄</span>
+            </button>
+          </div>
+
+          {/* ✨ THE NEW INTEGRATED 'LOCATE ME' PILL ✨ */}
+          {/* (Note: Already moved to the bottom-left near the clock!) */}
+        </div>
 
         {/* Location error toast */}
         {userLocation.error && (
-          <div className="pointer-events-none absolute bottom-20 left-1/2 z-[50] -translate-x-1/2 rounded-xl border border-red-500/30 bg-red-950/80 px-4 py-2 text-xs text-red-300 shadow-lg backdrop-blur-md">
+          <div className="pointer-events-none absolute bottom-32 left-1/2 z-[50] -translate-x-1/2 rounded-xl border border-red-500/30 bg-red-950/80 px-4 py-2 text-xs text-red-300 shadow-lg backdrop-blur-md">
             {userLocation.error}
           </div>
         )}

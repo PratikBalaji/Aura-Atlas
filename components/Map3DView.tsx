@@ -96,6 +96,12 @@ interface Map3DViewProps {
   userLongitude?: number | null;
   userAccuracy?: number | null;
   locateMeTrigger?: number;
+  isARModeActive?: boolean;
+  setIsARModeActive?: (active: boolean) => void;
+  selectedCampusName?: string;
+  setSelectedCampusName?: (name: string) => void;
+  isDroppingMode?: boolean;
+  setIsDroppingMode?: (active: boolean) => void;
 }
 
 // 1. Define the possible times
@@ -127,7 +133,6 @@ const MOCK_FRIENDS = [
   { id: 'f1', name: 'Sarah', color: 'bg-purple-500', offsetLat: 0.002, offsetLng: 0.001 },
   { id: 'f2', name: 'David', color: 'bg-blue-500', offsetLat: -0.001, offsetLng: -0.003 },
 ];
-
 export default function Map3DView({
   checkins,
   city,
@@ -145,6 +150,12 @@ export default function Map3DView({
   userLongitude = null,
   userAccuracy = null,
   locateMeTrigger = 0,
+  isARModeActive = false,
+  setIsARModeActive,
+  selectedCampusName = "Temple University",
+  setSelectedCampusName,
+  isDroppingMode = false,
+  setIsDroppingMode,
 }: Map3DViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -180,14 +191,6 @@ export default function Map3DView({
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isSharingLocation, setIsSharingLocation] = useState(false);
 
-  // NEW: Clock State
-  const [currentTime, setCurrentTime] = useState<{ time: string; period: string; date: string }>({
-    time: "00:00:00",
-    period: "PM",
-    date: ""
-  });
-
-  const [isARModeActive, setIsARModeActive] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [trackingId, setTrackingId] = useState<number | null>(null);
 
@@ -195,48 +198,11 @@ export default function Map3DView({
   const [airplanes, setAirplanes] = useState<any[]>([]);
   const [draftLocation, setDraftLocation] = useState<{lat: number, lng: number, screenX: number, screenY: number} | null>(null);
   const [draftMessage, setDraftMessage] = useState("");
-  const [isDroppingMode, setIsDroppingMode] = useState(false);
   const airplaneMarkersRef = useRef<mapboxgl.Marker[]>([]);
-
-  // 1. Get their saved campus as reactive state so the logo updates on selection
-  const [selectedCampusName, setSelectedCampusName] = useState<string>(() =>
-    typeof window !== 'undefined'
-      ? localStorage.getItem('aura_campus') || "Temple University"
-      : "Temple University"
-  );
 
   // 2. Find that specific college in your database to get its domain and coordinates
   const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
 
-  useEffect(() => {
-    const tzMap: Record<string, string> = {
-      'New York': 'America/New_York',
-      'Philadelphia': 'America/New_York',
-      'Chicago': 'America/Chicago',
-      'Houston': 'America/Chicago',
-      'Los Angeles': 'America/Los_Angeles',
-      'Phoenix': 'America/Phoenix',
-      'Dallas': 'America/Chicago',
-      'San Diego': 'America/Los_Angeles',
-      'Jacksonville': 'America/New_York',
-      'San Antonio': 'America/Chicago',
-      'Charlottesville': 'America/New_York'
-    };
-
-    const tick = () => {
-      const tz = tzMap[city.name] || Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-US', { timeZone: tz, hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const dateStr = now.toLocaleDateString('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric' });
-      
-      const [timePart, period] = timeStr.split(' ');
-      setCurrentTime({ time: timePart, period, date: dateStr });
-    };
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [city.name]);
 
   // 1. Get the User's Real Location on load
   useEffect(() => {
@@ -1344,7 +1310,7 @@ export default function Map3DView({
           screenY: point.y 
         });
         setDraftMessage("");
-        setIsDroppingMode(false); // Turn off mode immediately after selection
+        setIsDroppingMode?.(false); // Turn off mode immediately after selection
       }
     };
 
@@ -1397,12 +1363,11 @@ export default function Map3DView({
     <>
       <div ref={containerRef} className="h-full w-full" />
       
-
       <EmotionWeatherOverlay 
         map={mapInstance} 
         checkins={checkins} 
         isARModeActive={isARModeActive} 
-        setIsARModeActive={setIsARModeActive} 
+        setIsARModeActive={setIsARModeActive || (() => {})} 
       />
       <ResourceMarkers map={mapInstance} resources={getResourcesByCity(city.name)} />
       <CampusLayer
@@ -1467,281 +1432,6 @@ export default function Map3DView({
           <div className="w-3 h-3 bg-neutral-950 border-r border-b border-purple-500/50 rotate-45 mx-auto -mt-1.5" />
         </div>
       )}
-
-
-
-      {/* 🏫 COMPACT CAMPUS SELECTOR & TOOLS */}
-      <div className="absolute bottom-6 right-6 z-40 flex flex-col items-end gap-3 pointer-events-none">
-        
-        {/* 1. The Sliding List (Visible when isDrawerOpen is true) */}
-        <div className={`flex flex-col gap-2 transition-all duration-500 ease-in-out origin-bottom ${
-          isDrawerOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95 pointer-events-none'
-        }`}>
-          {ALL_COLLEGES
-            .filter((uni) => uni.city === (city.name === "New York City" ? "New York City" : city.name) && uni.name !== selectedCampusName)
-            .map((uni) => (
-              <button
-                key={uni.name}
-                onClick={() => {
-                  if (mapRef.current) {
-                    mapRef.current.flyTo({
-                      center: [uni.longitude, uni.latitude],
-                      zoom: 15.5,
-                      pitch: 45,
-                      duration: 2000
-                    });
-                  }
-                  setSelectedCampusName(uni.name);
-                  localStorage.setItem('aura_campus', uni.name);
-                  setIsDrawerOpen(false);
-                }}
-                className="flex items-center gap-3 bg-black/60 hover:bg-black/80 backdrop-blur-md p-2 pr-4 rounded-xl border border-white/10 text-white pointer-events-auto transition-all shadow-xl group"
-              >
-                <div className="w-6 h-6 flex items-center justify-center bg-white/5 rounded-md overflow-hidden">
-                  <img 
-                    src={`https://img.logo.dev/${uni.domain}?token=pk_VG_5jIWbQH2FsoADC0Lfqw&size=128`} 
-                    className="w-5 h-5 object-contain"
-                    alt=""
-                    onError={(e) => {
-                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${uni.name.charAt(0)}&background=random&color=fff`;
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest group-hover:text-indigo-300 transition-colors">
-                  {uni.name}
-                </span>
-              </button>
-            ))}
-        </div>
-
-        {/* 2. The Main Trigger (Switch Campus / Home Campus) */}
-        <button
-          onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-          className={`bg-indigo-600 hover:bg-indigo-500 text-white p-2 pr-4 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.4)] border border-indigo-400/30 transition-all pointer-events-auto flex items-center gap-3 ${
-            isDrawerOpen ? 'ring-2 ring-white scale-105' : ''
-          }`}
-        >
-          <div className="bg-white/10 p-1.5 rounded-lg">
-            <img 
-              src={`https://img.logo.dev/${userCampus?.domain}?token=pk_VG_5jIWbQH2FsoADC0Lfqw&size=128`} 
-              className="w-7 h-7 object-contain"
-              alt="Home"
-              onError={(e) => {
-                e.currentTarget.src = `https://ui-avatars.com/api/?name=${userCampus?.name?.charAt(0) || 'H'}&background=random&color=fff`;
-              }}
-            />
-          </div>
-          <span className="text-xs font-black tracking-tighter uppercase">
-            {isDrawerOpen ? "CLOSE SELECTOR" : "SWITCH CAMPUS"}
-          </span>
-        </button>
-
-        {/* 3. Aura Lens Trigger Button */}
-        <button
-          onClick={() => setIsARModeActive(true)}
-          className="bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white font-bold py-2.5 px-4 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400/30 transition-all flex items-center gap-2 pointer-events-auto"
-        >
-          <span className="text-lg">👁️</span> Aura Lens
-        </button>
-
-        {/* 4. Cleaner Cinematic Button */}
-        <button
-          onClick={() => onToggleSpin?.(!isSpinning)}
-          className="bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white p-2.5 rounded-xl shadow-lg border border-indigo-400/30 transition-all flex items-center justify-center pointer-events-auto"
-        >
-          <span className="text-lg">🔄</span>
-        </button>
-      </div>
-
-
-
-      {/* THE UPGRADED CLOCK & STATUS DASHBOARD (Bottom Left) */}
-      <div className="absolute bottom-6 left-6 flex items-center gap-6 bg-black/80 border border-white/10 backdrop-blur-xl p-4 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-50 pointer-events-auto">
-        
-        {/* Left Side: Sentiment, Date, and Time */}
-        <div className="flex flex-col min-w-[140px] relative">
-          
-          {/* 🌟 DYNAMIC Campus Sentiment Pill */}
-          <div className={`flex items-center gap-2 mb-3 px-2.5 py-1 rounded-full w-fit group cursor-help transition-all ${sentiment.wrapper}`}>
-            <span className={`text-xs animate-pulse ${sentiment.iconShadow}`}>
-              {sentiment.icon}
-            </span>
-            <span className={`text-[9px] font-bold tracking-widest uppercase ${sentiment.textClass}`}>
-              {sentiment.title}
-            </span>
-            
-            {/* 💬 The Hover Tooltip */}
-            <div className={`absolute bottom-full left-0 mb-3 w-48 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/95 backdrop-blur-md border p-2.5 rounded-xl text-[10px] text-neutral-200 pointer-events-none shadow-2xl z-50 ${sentiment.tooltipBorder}`}>
-              <span className={`font-bold block mb-1 ${sentiment.textClass}`}>
-                {sentiment.tooltipTitle}
-              </span>
-              {sentiment.tooltipDesc}
-            </div>
-          </div>
-
-          <div className="text-[10px] text-neutral-400 font-medium tracking-wider mb-1 uppercase">
-            {currentTime.date} <span className="text-purple-400 ml-1">📍 {city.name}, {CITIES.find(c => c.name === city.name)?.state || "PA"}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-3xl font-black text-white tracking-tighter flex items-baseline gap-1 tabular-nums">
-              {currentTime.time} <span className="text-xs font-bold text-neutral-500 uppercase">{currentTime.period}</span>
-            </div>
-
-            {/* ✨ Integrated Thermal Mood Matrix ✨ */}
-            {onToggleThermal && (
-              <ThermalMoodMatrix 
-                onToggle={onToggleThermal} 
-                lat={city.lat} 
-                lng={city.lng} 
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: The Interactive Controls */}
-        <div className="flex flex-col gap-2 pl-4 border-l border-white/10">
-          
-          {/* 1. Existing Safe Circle Toggle */}
-          <div className="flex items-center justify-between gap-4 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-            <div className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${isSharingLocation ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-600'}`}></span>
-              <span className="text-[9px] text-neutral-400 font-bold tracking-widest uppercase">
-                Safe Circle
-              </span>
-            </div>
-            {/* iOS Style Switch */}
-            <button 
-              onClick={() => toggleSafeCircle(!isSharingLocation)}
-              className={`w-10 h-5 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${
-                isSharingLocation ? 'bg-emerald-500' : 'bg-neutral-700'
-              }`}
-            >
-              <div className={`w-3 h-3 bg-white rounded-full transition-transform duration-300 shadow-md ${
-                isSharingLocation ? 'translate-x-5' : 'translate-x-0'
-              }`} />
-            </button>
-          </div>
-
-          {/* 2. NEW: Minimalist Anon Check-In Button */}
-          <button 
-            onClick={() => setIsDroppingMode(!isDroppingMode)}
-            className={`flex items-center justify-between gap-4 px-3 py-1.5 rounded-lg border transition-all duration-300 ${
-              isDroppingMode 
-                ? "bg-purple-900/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]" 
-                : "bg-white/5 border-white/5 hover:border-purple-500/50 hover:bg-white/10"
-            }`}
-          >
-            <span className={`text-[9px] font-bold tracking-widest uppercase ${isDroppingMode ? "text-purple-300" : "text-purple-400"}`}>
-              Anon Check-In
-            </span>
-            <span className={`text-xs ${isDroppingMode ? "animate-pulse drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]" : "opacity-70"}`}>
-              ✈️
-            </span>
-          </button>
-
-        </div>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-10 flex flex-col items-center justify-center pointer-events-none z-50">
-        
-        {/* STATE 1: IDLE BUTTON */}
-        {!isSettingUp && !quietRoute && (
-          <button
-            onClick={() => setIsSettingUp(true)}
-            className="pointer-events-auto flex items-center gap-2 rounded-full px-6 py-3 bg-neutral-900 border border-neutral-700 text-neutral-50 hover:border-violet-500/50 shadow-2xl backdrop-blur-md transition-all"
-          >
-            <svg className="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-            <span className="font-semibold text-sm">Find Quiet Route</span>
-          </button>
-        )}
-
-        {/* STATE 2: ADDRESS ENTRY BAR (Sleek & Horizontal) */}
-        {isSettingUp && !quietRoute && (
-          <div className="pointer-events-auto flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 p-2 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in duration-300">
-            <input 
-              value={fromAddress}
-              onChange={(e) => setFromAddress(e.target.value)}
-              placeholder="From..."
-              className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 w-40 focus:outline-none focus:border-violet-500/50"
-            />
-            <div className="text-neutral-600">→</div>
-            <input 
-              value={toAddress}
-              onChange={(e) => setToAddress(e.target.value)}
-              placeholder="To: (e.g. Founder's Garden)"
-              className="bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 w-48 focus:outline-none focus:border-violet-500/50"
-            />
-            <button 
-              onClick={() => {
-                if (fromAddress === "My Current Location" && userLocation) {
-                  calculateQuietRoute(userLocation);
-                } else {
-                  calculateQuietRoute();
-                }
-              }}
-              className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl px-4 py-2 text-xs font-bold transition-colors"
-            >
-              Go
-            </button>
-            <button onClick={() => setIsSettingUp(false)} className="text-neutral-500 hover:text-neutral-300 px-2 text-lg">×</button>
-          </div>
-        )}
-      </div>
-
-      {/* STATE 3: THE COMPACT ACTIVE HUD (Top of Screen) */}
-      {quietRoute && (
-        <div className="absolute top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-6 bg-neutral-900/80 border border-violet-500/30 backdrop-blur-md px-5 py-2.5 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 duration-500">
-            {/* Live Indicator */}
-            <div className="flex items-center gap-2 border-r border-neutral-800 pr-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500"></span>
-              </span>
-              <span className="text-[10px] font-bold text-violet-400 uppercase tracking-widest">Quiet Route</span>
-            </div>
-
-            <div className="w-px h-6 bg-neutral-700" />
-
-            {/* THE NEW POV BUTTON */}
-            <button 
-              onClick={() => {
-                const coords = quietRoute.geometry.coordinates;
-                if (coords && coords.length >= 2) {
-                  enterPOVMode(coords[0], coords[1]);
-                }
-              }}
-              className="flex items-center gap-2 group cursor-pointer hover:bg-neutral-800 px-3 py-1 rounded-lg transition-colors"
-            >
-              <span className="text-white font-bold text-lg group-hover:text-violet-400 transition-colors">{routeStats?.eta}</span>
-              <span className="text-neutral-500 text-sm font-medium">{routeStats?.distance}</span>
-              <span className="ml-2 bg-violet-500/20 text-violet-300 px-2 py-1 rounded text-[10px] font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                ENTER POV
-              </span>
-            </button>
-
-            <div className="w-px h-6 bg-neutral-700" />
-
-            {/* Instruction Section (The "Sleek" part) */}
-            <div className="hidden md:flex items-center gap-2 text-xs text-neutral-300 font-medium max-w-[200px] truncate">
-              <svg className="w-3 h-3 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-              {routeStats?.nextTurn}
-            </div>
-
-            {/* End Button */}
-            <button 
-              onClick={(e) => {
-                e.preventDefault(); // Prevents any weird page reloads
-                handleEndNavigation();
-              }} 
-              className="bg-red-500/20 text-red-400 hover:bg-red-500/30 hover:text-red-300 px-4 py-1.5 rounded-full text-[11px] font-bold transition-colors border border-red-500/20 z-50 pointer-events-auto"
-            >
-              End
-            </button>
-          </div>
-        </div>
-      )}
-
     </>
   );
 }
