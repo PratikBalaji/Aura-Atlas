@@ -13,7 +13,7 @@ import {
   CITIES,
 } from "@/lib/types";
 import { buildPointGeoJSON } from "@/lib/gridAggregator";
-import { buildCityMask } from "@/lib/cityMask";
+import { buildCityMask, buildMaskAt } from "@/lib/cityMask";
 import ResourceMarkers from "./ResourceMarkers";
 import CampusLayer from "./CampusLayer";
 import EmotionWeatherOverlay from "./EmotionWeatherOverlay";
@@ -24,7 +24,6 @@ import { supabase } from "@/lib/supabase";
 import AddSafeSpaceModal from "./AddSafeSpaceModal";
 import { seedRealSafeSpaces } from "@/utils/seedSafeSpaces";
 import CampusSentiment from "./CampusSentiment";
-import AuraLensView from "./AuraLensView";
 import ThermalMoodMatrix from "./ThermalMoodMatrix";
 import { ALL_COLLEGES } from "@/lib/collegeList";
 import toast from "react-hot-toast";
@@ -199,13 +198,15 @@ export default function Map3DView({
   const [isDroppingMode, setIsDroppingMode] = useState(false);
   const airplaneMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
-  // 1. Get their saved campus from state or localStorage (using Temple as a fallback)
-  const savedCampusName = typeof window !== 'undefined' 
-    ? localStorage.getItem('aura_campus') || "Temple University" 
-    : "Temple University";
+  // 1. Get their saved campus as reactive state so the logo updates on selection
+  const [selectedCampusName, setSelectedCampusName] = useState<string>(() =>
+    typeof window !== 'undefined'
+      ? localStorage.getItem('aura_campus') || "Temple University"
+      : "Temple University"
+  );
 
   // 2. Find that specific college in your database to get its domain and coordinates
-  const userCampus = ALL_COLLEGES.find(college => college.name === savedCampusName);
+  const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
 
   useEffect(() => {
     const tzMap: Record<string, string> = {
@@ -868,6 +869,16 @@ export default function Map3DView({
     }, 50);
   }, [campuses, city, focusRegisteredCampus, focusedCampus, registeredCollege]);
 
+  // ── GPS location changes → re-center mask on user ────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current || userLatitude === null || userLongitude === null) return;
+    const maskSrc = map.getSource("city-mask") as mapboxgl.GeoJSONSource | undefined;
+    if (maskSrc) {
+      maskSrc.setData(buildMaskAt(userLatitude, userLongitude, city.radius));
+    }
+  }, [userLatitude, userLongitude, city.radius]);
+
   // ── Update mood data (both sources) ──────────────────────────
   useEffect(() => {
     const map = mapRef.current;
@@ -1467,20 +1478,22 @@ export default function Map3DView({
           isDrawerOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95 pointer-events-none'
         }`}>
           {ALL_COLLEGES
-            .filter((uni) => uni.city === (city.name === "New York City" ? "New York City" : city.name) && uni.name !== userCampus?.name)
+            .filter((uni) => uni.city === (city.name === "New York City" ? "New York City" : city.name) && uni.name !== selectedCampusName)
             .map((uni) => (
               <button
                 key={uni.name}
                 onClick={() => {
                   if (mapRef.current) {
-                    mapRef.current.flyTo({ 
-                      center: [uni.longitude, uni.latitude], 
-                      zoom: 15.5, 
-                      pitch: 45, 
-                      duration: 2000 
+                    mapRef.current.flyTo({
+                      center: [uni.longitude, uni.latitude],
+                      zoom: 15.5,
+                      pitch: 45,
+                      duration: 2000
                     });
                   }
-                  setIsDrawerOpen(false); // Auto-close after selection
+                  setSelectedCampusName(uni.name);
+                  localStorage.setItem('aura_campus', uni.name);
+                  setIsDrawerOpen(false);
                 }}
                 className="flex items-center gap-3 bg-black/60 hover:bg-black/80 backdrop-blur-md p-2 pr-4 rounded-xl border border-white/10 text-white pointer-events-auto transition-all shadow-xl group"
               >
@@ -1523,9 +1536,9 @@ export default function Map3DView({
           </span>
         </button>
 
-        {/* 3. Aura Lens Trigger Button (Integrated here for alignment) */}
+        {/* 3. Aura Lens Trigger Button */}
         <button
-          onClick={() => { window.location.href = "/ar"; }}
+          onClick={() => setIsARModeActive(true)}
           className="bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur-md text-white font-bold py-2.5 px-4 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400/30 transition-all flex items-center gap-2 pointer-events-auto"
         >
           <span className="text-lg">👁️</span> Aura Lens
@@ -1729,10 +1742,6 @@ export default function Map3DView({
         </div>
       )}
 
-      {/* 👁️ THE AURA LENS (AR CAMERA VIEW) */}
-      {isARModeActive && (
-        <AuraLensView onClose={() => setIsARModeActive(false)} />
-      )}
     </>
   );
 }

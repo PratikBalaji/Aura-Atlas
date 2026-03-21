@@ -2,24 +2,20 @@ import turfCircle from "@turf/circle";
 import { point } from "@turf/helpers";
 import { CityConfig } from "./types";
 
-/**
- * Build an inverted polygon mask: a giant world-covering polygon with a hole
- * cut out for the city. When rendered as a fill layer with high opacity,
- * everything outside the city fades/dims.
- */
-export function buildCityMask(city: CityConfig): GeoJSON.FeatureCollection {
-  // Outer ring covering the whole world
-  const outerRing: GeoJSON.Position[] = [
-    [-180, -85],
-    [180, -85],
-    [180, 85],
-    [-180, 85],
-    [-180, -85],
-  ];
+const OUTER_RING: GeoJSON.Position[] = [
+  [-180, -85],
+  [180, -85],
+  [180, 85],
+  [-180, 85],
+  [-180, -85],
+];
 
-  // Inner ring = the city circle (hole), wound in opposite direction
-  const center = point([city.lng, city.lat]);
-  const circle = turfCircle(center, city.radius, { steps: 80, units: "kilometers" });
+/**
+ * Build an inverted polygon mask centered on arbitrary coordinates.
+ * Everything outside the circle is dimmed; the hole follows the user.
+ */
+export function buildMaskAt(lat: number, lng: number, radiusKm: number): GeoJSON.FeatureCollection {
+  const circle = turfCircle(point([lng, lat]), radiusKm, { steps: 80, units: "kilometers" });
   const innerRing = circle.geometry.coordinates[0].slice().reverse();
 
   return {
@@ -30,9 +26,18 @@ export function buildCityMask(city: CityConfig): GeoJSON.FeatureCollection {
         properties: {},
         geometry: {
           type: "Polygon",
-          coordinates: [outerRing, innerRing],
+          coordinates: [OUTER_RING, innerRing],
         },
       },
     ],
   };
+}
+
+/**
+ * Build an inverted polygon mask: a giant world-covering polygon with a hole
+ * cut out for the city. When rendered as a fill layer with high opacity,
+ * everything outside the city fades/dims.
+ */
+export function buildCityMask(city: CityConfig): GeoJSON.FeatureCollection {
+  return buildMaskAt(city.lat, city.lng, city.radius);
 }
