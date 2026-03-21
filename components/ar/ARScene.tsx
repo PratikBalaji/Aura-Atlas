@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { XRButton } from '@react-three/xr';
+import { XRButton, XR, Controllers, Hands } from '@react-three/xr';
 import { PerspectiveCamera, OrbitControls, Environment, Sky, Stars } from "@react-three/drei";
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
