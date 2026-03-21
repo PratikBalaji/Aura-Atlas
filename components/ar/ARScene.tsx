@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { useXR, XRDeviceButton, XR, Controllers, Hands } from "@react-three/xr";
+import { XRButton } from '@react-three/xr';
 import { PerspectiveCamera, OrbitControls, Environment, Sky, Stars } from "@react-three/drei";
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -103,13 +103,13 @@ export default function ARScene(props: ARSceneProps) {
       {/* WebXR Enter Button */}
       {!props.isDemo && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]">
-          <XRDeviceButton mode="AR" sessionInit={{ optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking"] }}>
+          <XRButton mode="AR" sessionInit={{ optionalFeatures: ["local-floor", "bounded-floor", "hand-tracking"] }}>
             {(status: any) => (
               <button className="bg-white text-black px-10 py-4 rounded-full font-black uppercase tracking-tighter shadow-3xl hover:bg-neutral-200 transition-all">
                 {status === "unsupported" ? "AR NOT SUPPORTED" : status === "entered" ? "EXIT AR" : "START AR VIEW"}
               </button>
             )}
-          </XRDeviceButton>
+          </XRButton>
         </div>
       )}
 
