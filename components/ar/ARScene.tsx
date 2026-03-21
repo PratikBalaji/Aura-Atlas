@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { XRButton, XR, createXRStore, XRControllerModel, XRHandModel } from '@react-three/xr';
+import { XR, createXRStore, XRControllerModel, XRHandModel } from '@react-three/xr';
 import { PerspectiveCamera, OrbitControls, Environment, Sky, Stars } from "@react-three/drei";
 import { useState, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -89,13 +89,13 @@ function SceneContent({ userLocation, heading, isDemo, debugMode }: ARSceneProps
   );
 }
 
-const store = createXRStore({
-  depthSensing: true,
-  handTracking: true,
-});
 
 export default function ARScene(props: ARSceneProps) {
   const [isClient, setIsClient] = useState(false);
+  const store = useMemo(() => createXRStore({
+    depthSensing: true,
+    handTracking: true,
+  }), []);
 
   useEffect(() => {
     setIsClient(true);
