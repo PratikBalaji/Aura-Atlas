@@ -528,8 +528,8 @@ export default function Home() {
                 onClick={() => setShowDeloittePulse(!showDeloittePulse)}
                 className={`flex items-center gap-3 h-12 rounded-full transition-[width,background-color,border-color] duration-500 ease-out overflow-hidden text-left group/btn shadow-lg outline-none ${
                   showDeloittePulse 
-                    ? "w-48 bg-black border border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-                    : "w-12 hover:w-48 bg-transparent border border-transparent hover:bg-black text-white/70 hover:text-white"
+                    ? "w-72 bg-black border border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                    : "w-12 hover:w-72 bg-transparent border border-transparent hover:bg-black text-white/70 hover:text-white"
                 }`}
               >
                 <div className={`w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full transition-colors ${
