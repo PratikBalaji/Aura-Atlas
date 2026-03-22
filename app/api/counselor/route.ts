@@ -36,21 +36,22 @@ export async function GET() {
     return NextResponse.json({ campuses: [] });
   }
 
-  const now = new Date();
-  const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-  const ago48h = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
-  const ago7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = Date.now();
+  const ago24h = now - 24 * 60 * 60 * 1000;
+  const ago48h = now - 48 * 60 * 60 * 1000;
+  const ago7d  = now - 7 * 24 * 60 * 60 * 1000;
 
-  // Fetch all recent checkins grouped by city (campus_name col may not exist)
+  // Fetch all recent checkins grouped by city.
+  // The checkins table stores time as `timestamp` (unix ms bigint), not `created_at`.
   const { data: checkins24h, error: err24 } = await supabase
     .from("checkins")
-    .select("city, mood, created_at")
-    .gte("created_at", ago24h);
+    .select("city, mood, timestamp")
+    .gte("timestamp", ago24h);
 
   const { data: checkins7d, error: err7 } = await supabase
     .from("checkins")
-    .select("city, mood, created_at")
-    .gte("created_at", ago7d);
+    .select("city, mood, timestamp")
+    .gte("timestamp", ago7d);
 
   if (err24 || err7) {
     const msg = err24?.message ?? err7?.message ?? "unknown";
@@ -62,8 +63,8 @@ export async function GET() {
   const { data: checkinsPrior } = await supabase
     .from("checkins")
     .select("city, mood")
-    .gte("created_at", ago48h)
-    .lt("created_at", ago24h);
+    .gte("timestamp", ago48h)
+    .lt("timestamp", ago24h);
 
   // Index by city
   const buckets24h: Record<string, { mood: string }[]> = {};

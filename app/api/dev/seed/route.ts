@@ -13,22 +13,22 @@ const CITY_DATA: Record<string, {
   "Philadelphia": {
     latRange: [39.93, 39.97],
     lngRange: [-75.20, -75.13],
-    campuses: ["Temple University", "Drexel University", "University of Pennsylvania", "Jefferson University"],
+    campuses: ["Temple University", "Drexel University", "University of Pennsylvania"],
   },
   "New York City": {
     latRange: [40.70, 40.75],
     lngRange: [-74.02, -73.97],
-    campuses: ["NYU", "Columbia University", "Fordham University", "The New School"],
+    campuses: ["New York University", "Columbia University", "City College of New York"],
   },
   "Los Angeles": {
     latRange: [34.02, 34.07],
     lngRange: [-118.27, -118.22],
-    campuses: ["UCLA", "USC", "LMU", "Cal State LA"],
+    campuses: ["University of California, Los Angeles", "University of Southern California", "Loyola Marymount University"],
   },
   "Chicago": {
     latRange: [41.86, 41.90],
     lngRange: [-87.65, -87.60],
-    campuses: ["University of Chicago", "Northwestern University", "DePaul University", "Loyola University Chicago"],
+    campuses: ["University of Chicago", "Northwestern University", "University of Illinois Chicago"],
   },
   "Houston": {
     latRange: [29.74, 29.78],
