@@ -41,50 +41,53 @@ export async function GET() {
   const ago48h = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
   const ago7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Fetch all recent checkins with campus_name in one query
+  // Fetch all recent checkins grouped by city (campus_name col may not exist)
   const { data: checkins24h, error: err24 } = await supabase
     .from("checkins")
-    .select("campus_name, mood, created_at")
+    .select("city, mood, created_at")
     .gte("created_at", ago24h);
 
   const { data: checkins7d, error: err7 } = await supabase
     .from("checkins")
-    .select("campus_name, mood, created_at")
+    .select("city, mood, created_at")
     .gte("created_at", ago7d);
 
   if (err24 || err7) {
-    return NextResponse.json({ error: "Failed to fetch checkins" }, { status: 500 });
+    const msg = err24?.message ?? err7?.message ?? "unknown";
+    console.error("[counselor] checkins query failed:", msg);
+    return NextResponse.json({ error: `Failed to fetch checkins: ${msg}` }, { status: 500 });
   }
 
   // Also fetch "prior 24h" (48h–24h ago) for trend direction
   const { data: checkinsPrior } = await supabase
     .from("checkins")
-    .select("campus_name, mood")
+    .select("city, mood")
     .gte("created_at", ago48h)
     .lt("created_at", ago24h);
 
-  // Index by campus_name
+  // Index by city
   const buckets24h: Record<string, { mood: string }[]> = {};
   const buckets7d: Record<string, { mood: string }[]> = {};
   const bucketsPrior: Record<string, { mood: string }[]> = {};
 
   for (const c of checkins24h ?? []) {
-    if (!c.campus_name) continue;
-    (buckets24h[c.campus_name] ??= []).push({ mood: c.mood });
+    if (!c.city) continue;
+    (buckets24h[c.city] ??= []).push({ mood: c.mood });
   }
   for (const c of checkins7d ?? []) {
-    if (!c.campus_name) continue;
-    (buckets7d[c.campus_name] ??= []).push({ mood: c.mood });
+    if (!c.city) continue;
+    (buckets7d[c.city] ??= []).push({ mood: c.mood });
   }
   for (const c of checkinsPrior ?? []) {
-    if (!c.campus_name) continue;
-    (bucketsPrior[c.campus_name] ??= []).push({ mood: c.mood });
+    if (!c.city) continue;
+    (bucketsPrior[c.city] ??= []).push({ mood: c.mood });
   }
 
   const campuses: CollegeMoodSummary[] = colleges.map((college) => {
-    const rows24 = buckets24h[college.name] ?? [];
-    const rows7d = buckets7d[college.name] ?? [];
-    const rowsPrior = bucketsPrior[college.name] ?? [];
+    // Match checkins to college by city
+    const rows24 = buckets24h[college.city] ?? [];
+    const rows7d = buckets7d[college.city] ?? [];
+    const rowsPrior = bucketsPrior[college.city] ?? [];
 
     // Mood distribution (24h)
     const dist: Record<string, number> = {};

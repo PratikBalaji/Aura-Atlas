@@ -70,7 +70,7 @@ export async function POST() {
   );
 
   // Idempotent: delete previous seed data
-  await supabase.from("checkins").delete().eq("anonymous_message", "DEMO_SEED");
+  await supabase.from("checkins").delete().eq("message", "DEMO_SEED");
 
   const rows = [];
   for (let i = 0; i < 50; i++) {
@@ -79,17 +79,12 @@ export async function POST() {
     const mood = weightedMood();
     const lat = randInRange(latRange[0], latRange[1]);
     const lng = randInRange(lngRange[0], lngRange[1]);
-    const campus_name = campuses[Math.floor(Math.random() * campuses.length)];
-
     rows.push({
       city,
       mood,
-      weight: parseFloat((Math.random() * 0.7 + 0.3).toFixed(2)),
       lat,
       lng,
-      campus_name,
-      user_id: "00000000-0000-0000-0000-000000000001",
-      anonymous_message: "DEMO_SEED",
+      message: "DEMO_SEED",
       created_at: new Date(Date.now() - Math.random() * 86_400_000).toISOString(),
     });
   }
