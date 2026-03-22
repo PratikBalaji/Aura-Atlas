@@ -440,7 +440,7 @@ export default function Home() {
                 <span className="text-[11px] font-bold text-white tracking-widest uppercase drop-shadow-sm leading-tight">
                   {city.name}
                 </span>
-                <span className="text-[8px] font-medium text-white/40 uppercase tracking-tighter">Current Node</span>
+                <span className="text-[8px] font-medium text-white/40 uppercase tracking-tighter">Current City</span>
               </div>
             </div>
 
