@@ -487,7 +487,7 @@ export default function Home() {
               >
                 <button
                   onClick={() => setLocateMeTrigger(n => n + 1)}
-                  className="flex items-center gap-3 h-12 w-12 hover:w-48 rounded-full transition-[width,background-color] duration-500 ease-out overflow-hidden text-left group/btn bg-transparent hover:bg-white/10 text-white/70 hover:text-white border border-transparent"
+                  className="flex items-center gap-3 h-12 w-12 hover:w-48 rounded-full transition-[width,background-color] duration-500 ease-out overflow-hidden text-left group/btn bg-transparent hover:bg-black text-white/70 hover:text-white border border-transparent"
                 >
                   <div className="w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full bg-white/10 group-hover/btn:bg-transparent transition-colors">📍</div>
                   <span className="text-[10px] font-bold tracking-widest uppercase whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 delay-100">Locate Me</span>
@@ -511,7 +511,7 @@ export default function Home() {
                 className={`flex items-center gap-3 h-12 rounded-full transition-[width,background-color] duration-500 ease-out overflow-hidden text-left group/btn border border-transparent ${
                   isDroppingMode
                     ? "w-48 bg-white/20 border-white/40 text-white"
-                    : "w-12 hover:w-48 bg-transparent hover:bg-white/10 text-white/70 hover:text-white"
+                    : "w-12 hover:w-48 bg-transparent hover:bg-black text-white/70 hover:text-white"
                 }`}
               >
                 <div className={`w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full transition-colors ${
@@ -636,4 +636,3 @@ export default function Home() {
     </div>
   );
 }
-

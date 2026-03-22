@@ -13,7 +13,7 @@ export default function AuraPointsButton({
       className={`flex items-center gap-3 h-12 rounded-full transition-[width,background-color,border-color] duration-500 ease-out overflow-hidden text-left group/btn shadow-lg ${
         isActive
           ? "w-48 bg-teal-500/20 border border-teal-400/40 text-white shadow-[0_0_15px_rgba(20,184,166,0.3)]"
-          : "w-12 hover:w-48 bg-transparent border border-transparent hover:bg-white/10 text-white/70 hover:text-white"
+          : "w-12 hover:w-48 bg-transparent border border-transparent hover:bg-black text-white/70 hover:text-white"
       }`}
     >
       <div className={`w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full transition-colors ${
