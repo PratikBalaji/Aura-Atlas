@@ -6,7 +6,7 @@ import NavigationMenu from "@/components/NavigationMenu";
 export default function Navbar() {
   const pathname = usePathname();
 
-  if (pathname === "/login" || pathname === "/dev-dashboard") {
+  if (pathname === "/login" || pathname === "/dev-dashboard" || pathname === "/counselor") {
     return null;
   }
 
