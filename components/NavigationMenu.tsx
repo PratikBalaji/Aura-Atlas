@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/friends", label: "Friends", icon: "👥" },
   { href: "/ai-therapist", label: "AI Therapist", icon: "🧠" },
   { href: "/profile", label: "Profile", icon: "👤" },
+  { href: "/counselor", label: "Counselor", icon: "🏫" },
 ];
 
 const MENU_SIZE = 306;
