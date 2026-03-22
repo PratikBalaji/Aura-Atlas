@@ -18,6 +18,7 @@ import ResourceMarkers from "./ResourceMarkers";
 import CampusLayer from "./CampusLayer";
 import EmotionWeatherOverlay from "./EmotionWeatherOverlay";
 import UserLocationLayer from "./UserLocationLayer";
+import CapitalOneOasis from "./MapLayers/CapitalOneOasis";
 import { getResourcesByCity } from "@/lib/store";
 import { CAMPUSES } from "@/lib/campusDetection";
 import { supabase } from "@/lib/supabase";
@@ -1385,6 +1386,9 @@ export default function Map3DView({
         longitude={userLongitude}
         accuracy={userAccuracy}
       />
+
+      {/* 🌟 CAPITAL ONE OASIS — Glassmorphic spatial markers */}
+      <CapitalOneOasis map={mapInstance} />
 
       {/* Safe Space Modal — shown on right-click */}
       {draftSafeSpace && (
