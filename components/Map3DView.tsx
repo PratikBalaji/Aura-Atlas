@@ -213,18 +213,11 @@ export default function Map3DView({
   const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
 
 
-  // 1. Get the User's Real Location on load
   useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.longitude, position.coords.latitude]);
-        },
-        (error) => console.warn("Location error:", error),
-        { enableHighAccuracy: true }
-      );
+    if (userLongitude !== null && userLatitude !== null) {
+      setUserLocation([userLongitude, userLatitude]);
     }
-  }, []);
+  }, [userLatitude, userLongitude]);
 
   // 2. Handle the Map Markers for User and Friends
   const toggleSafeCircle = async (isActive: boolean) => {

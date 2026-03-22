@@ -143,6 +143,14 @@ export default function Home() {
     fetchCheckins();
   }, [fetchCheckins]);
 
+  const handleLocateMe = useCallback(() => {
+    if (userLocation.latitude === null || userLocation.longitude === null) {
+      userLocation.start();
+    }
+
+    setLocateMeTrigger((n) => n + 1);
+  }, [userLocation]);
+
   const handleSeedDemo = async () => {
     setIsSeeding(true);
     setDemoStatus('idle');
@@ -538,23 +546,21 @@ export default function Home() {
             </div>
 
             {/* Locate Me */}
-            {userLocation.latitude !== null && (
-              <div
-                onMouseEnter={() => setHoveredDockItem('locate')}
-                onMouseLeave={() => setHoveredDockItem(null)}
-                className={`transition-all duration-250 ease-out origin-left ${
-                  hoveredDockItem === 'locate' ? 'translate-x-3 drop-shadow-[0_0_12px_rgba(255,255,255,0.15)]' : ''
-                } ${hoveredDockItem && hoveredDockItem !== 'locate' ? 'opacity-35' : 'opacity-100'}`}
-              >
-                <button
-                  onClick={() => setLocateMeTrigger(n => n + 1)}
-                  className="flex items-center gap-3 h-12 w-12 hover:w-48 rounded-full transition-[width,background-color] duration-500 ease-out overflow-hidden text-left group/btn bg-transparent hover:bg-black text-white/70 hover:text-white border border-transparent"
-                >
-                  <div className="w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full bg-white/10 group-hover/btn:bg-transparent transition-colors">📍</div>
-                  <span className="text-[10px] font-bold tracking-widest uppercase whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 delay-100">Locate Me</span>
-                </button>
-              </div>
-            )}
+             <div
+               onMouseEnter={() => setHoveredDockItem('locate')}
+               onMouseLeave={() => setHoveredDockItem(null)}
+               className={`transition-all duration-250 ease-out origin-left ${
+                 hoveredDockItem === 'locate' ? 'translate-x-3 drop-shadow-[0_0_12px_rgba(255,255,255,0.15)]' : ''
+               } ${hoveredDockItem && hoveredDockItem !== 'locate' ? 'opacity-35' : 'opacity-100'}`}
+             >
+               <button
+                 onClick={handleLocateMe}
+                 className="flex items-center gap-3 h-12 w-12 hover:w-48 rounded-full transition-[width,background-color] duration-500 ease-out overflow-hidden text-left group/btn bg-transparent hover:bg-black text-white/70 hover:text-white border border-transparent"
+               >
+                 <div className="w-12 h-12 shrink-0 flex items-center justify-center text-xl rounded-full bg-white/10 group-hover/btn:bg-transparent transition-colors">📍</div>
+                 <span className="text-[10px] font-bold tracking-widest uppercase whitespace-nowrap opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 delay-100">Locate Me</span>
+               </button>
+             </div>
 
             {/* Elegant Separator Line */}
             <div className={`w-8 h-[1px] bg-white/20 mx-auto my-1 rounded-full transition-opacity duration-250 ${hoveredDockItem ? 'opacity-10' : ''}`}></div>
@@ -684,7 +690,7 @@ export default function Home() {
         </div>
 
         {/* Location error toast */}
-        {userLocation.error && (
+        {userLocation.error && userLocation.hasRequested && (
           <div className="pointer-events-none absolute bottom-32 left-1/2 z-[50] -translate-x-1/2 rounded-xl border border-red-500/30 bg-red-950/80 px-4 py-2 text-xs text-red-300 shadow-lg backdrop-blur-md">
             {userLocation.error}
           </div>

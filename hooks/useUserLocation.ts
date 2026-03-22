@@ -9,6 +9,7 @@ export interface UserLocationState {
   heading: number | null;
   error: string | null;
   isTracking: boolean;
+  hasRequested: boolean;
 }
 
 /** Haversine distance in metres between two lat/lng pairs. */
@@ -41,6 +42,7 @@ export function useUserLocation(): UserLocationState & {
     heading: null,
     error: null,
     isTracking: false,
+    hasRequested: false,
   });
 
   const watchIdRef = useRef<number | null>(null);
@@ -60,6 +62,7 @@ export function useUserLocation(): UserLocationState & {
         ...prev,
         error: "Geolocation is not supported by your browser.",
         isTracking: false,
+        hasRequested: true,
       }));
       return;
     }
@@ -67,7 +70,7 @@ export function useUserLocation(): UserLocationState & {
     // Avoid duplicate watchers
     if (watchIdRef.current !== null) return;
 
-    setState((prev) => ({ ...prev, error: null, isTracking: true }));
+    setState((prev) => ({ ...prev, error: null, isTracking: true, hasRequested: true }));
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -93,6 +96,7 @@ export function useUserLocation(): UserLocationState & {
           heading: heading ?? null,
           error: null,
           isTracking: true,
+          hasRequested: true,
         });
       },
       (geoError) => {
@@ -111,7 +115,7 @@ export function useUserLocation(): UserLocationState & {
           default:
             message = "An unknown error occurred while accessing your location.";
         }
-        setState((prev) => ({ ...prev, error: message, isTracking: false }));
+        setState((prev) => ({ ...prev, error: message, isTracking: false, hasRequested: true }));
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
@@ -124,14 +128,11 @@ export function useUserLocation(): UserLocationState & {
       }
     );
   }, []);
-
-  // Auto-start on mount, clean up on unmount
   useEffect(() => {
-    start();
     return () => {
       stop();
     };
-  }, [start, stop]);
+  }, [stop]);
 
   return { ...state, start, stop };
 }

@@ -63,6 +63,45 @@ function randInRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+async function insertRowsWithSchemaFallback(
+  supabase: { from: (...args: any[]) => any },
+  rows: Array<Record<string, unknown>>
+) {
+  if (rows.length === 0) {
+    return { error: null, insertedColumns: [] as string[] };
+  }
+
+  const payloadRows = rows.map((row) => ({ ...row }));
+  const removedColumns: string[] = [];
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const { error } = await supabase.from("checkins").insert(payloadRows);
+    if (!error) {
+      return { error: null, insertedColumns: removedColumns };
+    }
+
+    const missingColumn = error.message?.match(/Could not find the '([^']+)' column/)?.[1];
+    if (!missingColumn) {
+      return { error, insertedColumns: removedColumns };
+    }
+
+    const hasColumn = payloadRows.some((row) => missingColumn in row);
+    if (!hasColumn) {
+      return { error, insertedColumns: removedColumns };
+    }
+
+    removedColumns.push(missingColumn);
+    payloadRows.forEach((row) => {
+      delete row[missingColumn];
+    });
+  }
+
+  return {
+    error: new Error("Demo seed failed after schema fallback attempts."),
+    insertedColumns: removedColumns,
+  };
+}
+
 export async function POST() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -93,10 +132,14 @@ export async function POST() {
     });
   }
 
-  const { error } = await supabase.from("checkins").insert(rows);
+  const { error, insertedColumns } = await insertRowsWithSchemaFallback(supabase, rows);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ inserted: rows.length, message: "Demo data seeded successfully" });
+  return NextResponse.json({
+    inserted: rows.length,
+    message: "Demo data seeded successfully",
+    removedOptionalColumns: insertedColumns,
+  });
 }
