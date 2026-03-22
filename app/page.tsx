@@ -84,6 +84,7 @@ export default function Home() {
   const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
   const [isDroppingMode, setIsDroppingMode] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [demoStatus, setDemoStatus] = useState<'idle' | 'ok' | 'err'>('idle');
 
   const fetchCheckins = useCallback(async () => {
     try {
@@ -144,15 +145,23 @@ export default function Home() {
 
   const handleSeedDemo = async () => {
     setIsSeeding(true);
+    setDemoStatus('idle');
     try {
       const res = await fetch('/api/dev/seed', { method: 'POST' });
       if (res.ok) {
         await fetchCheckins();
+        setDemoStatus('ok');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        console.error('Seed failed:', body?.error);
+        setDemoStatus('err');
       }
     } catch (e) {
       console.error('Seed failed:', e);
+      setDemoStatus('err');
     } finally {
       setIsSeeding(false);
+      setTimeout(() => setDemoStatus('idle'), 3000);
     }
   };
 
@@ -399,15 +408,7 @@ export default function Home() {
           </Link>
         )}
 
-        {/* Counselor link — below the MENU button (NavMenu is fixed top-left z-[9200], so stay clear) */}
-        <Link
-          href="/counselor"
-          className="absolute top-[72px] left-4 z-[60] flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 backdrop-blur-md px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white/80 hover:border-white/20 transition-all pointer-events-auto"
-        >
-          🏫 Counselor
-        </Link>
-
-        {needsCheckIn && (
+{needsCheckIn && (
           <button
             onClick={() => setIsModalOpen(true)}
             className="absolute top-6 right-28 bg-neutral-900 border border-white/15 p-3 rounded-full hover:bg-black hover:translate-x-3 transition-all duration-250 ease-out z-[60] pointer-events-auto"
@@ -668,10 +669,16 @@ export default function Home() {
             <button
               onClick={handleSeedDemo}
               disabled={isSeeding}
-              className="flex items-center gap-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 ${
+                demoStatus === 'ok'
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                  : demoStatus === 'err'
+                  ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                  : 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20'
+              }`}
               title="Load demo data"
             >
-              {isSeeding ? '...' : 'Demo'}
+              {isSeeding ? '⏳' : demoStatus === 'ok' ? '✓ Seeded' : demoStatus === 'err' ? '✗ Failed' : 'Demo'}
             </button>
           </div>
         </div>

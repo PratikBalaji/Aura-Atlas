@@ -79,11 +79,14 @@ export async function POST() {
     const mood = weightedMood();
     const lat = randInRange(latRange[0], latRange[1]);
     const lng = randInRange(lngRange[0], lngRange[1]);
+    const campus_name = campuses[i % campuses.length];
     rows.push({
+      id: crypto.randomUUID(),
       city,
       mood,
       lat,
       lng,
+      campus_name,
       message: "DEMO_SEED",
       timestamp: Date.now() - Math.floor(Math.random() * 86_400_000),
       hugs: 0,
