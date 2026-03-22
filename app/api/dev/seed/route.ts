@@ -85,7 +85,8 @@ export async function POST() {
       lat,
       lng,
       message: "DEMO_SEED",
-      created_at: new Date(Date.now() - Math.random() * 86_400_000).toISOString(),
+      timestamp: Date.now() - Math.floor(Math.random() * 86_400_000),
+      hugs: 0,
     });
   }
 

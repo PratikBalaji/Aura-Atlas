@@ -397,10 +397,10 @@ export default function Home() {
           </Link>
         )}
 
-        {/* Counselor link — top-left */}
+        {/* Counselor link — below the MENU button (NavMenu is fixed top-left z-[9200], so stay clear) */}
         <Link
           href="/counselor"
-          className="absolute top-6 left-6 z-[60] flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 backdrop-blur-md px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white/80 hover:border-white/20 transition-all pointer-events-auto"
+          className="absolute top-[72px] left-4 z-[60] flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 backdrop-blur-md px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white/80 hover:border-white/20 transition-all pointer-events-auto"
         >
           🏫 Counselor
         </Link>
