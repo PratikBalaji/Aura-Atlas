@@ -82,6 +82,7 @@ export default function Home() {
   
   const userCampus = ALL_COLLEGES.find(college => college.name === selectedCampusName);
   const [isDroppingMode, setIsDroppingMode] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const fetchCheckins = useCallback(async () => {
     try {
@@ -133,6 +134,25 @@ export default function Home() {
     setStreak(newStreak);
     setNeedsCheckIn(false);
     setIsNewUser(false);
+    fetchCheckins(); // refresh map immediately after user submits check-in
+  };
+
+  const handleNewCheckin = useCallback(() => {
+    fetchCheckins();
+  }, [fetchCheckins]);
+
+  const handleSeedDemo = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await fetch('/api/dev/seed', { method: 'POST' });
+      if (res.ok) {
+        await fetchCheckins();
+      }
+    } catch (e) {
+      console.error('Seed failed:', e);
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   useEffect(() => {
@@ -355,6 +375,7 @@ export default function Home() {
           setIsDroppingMode={setIsDroppingMode}
           isSettingUp={showQuietRoute}
           setIsSettingUp={setShowQuietRoute}
+          onNewCheckin={handleNewCheckin}
         />
 
         {!isNewUser && (
@@ -602,6 +623,16 @@ export default function Home() {
               }`}
             >
               <RotateCw className="h-4 w-4" />
+            </button>
+
+            {/* Demo Mode */}
+            <button
+              onClick={handleSeedDemo}
+              disabled={isSeeding}
+              className="flex items-center gap-1.5 rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+              title="Load demo data"
+            >
+              {isSeeding ? '...' : 'Demo'}
             </button>
           </div>
         </div>
