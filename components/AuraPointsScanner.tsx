@@ -8,10 +8,14 @@ import type { EnvironmentFactor, ScanResult, IndoorAuraResult, BuildingResult } 
 
 export default function AuraPointsScanner({
   onClose,
-  onPointsAwarded
+  onPointsAwarded,
+  userLatitude,
+  userLongitude,
 }: {
   onClose: () => void;
   onPointsAwarded?: (points: number) => void;
+  userLatitude?: number | null;
+  userLongitude?: number | null;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,7 +77,7 @@ export default function AuraPointsScanner({
     setParsedFactors(factors);
   }, [scanResult]);
 
-  // ── Capture & Analyze ───────────────────────────────────────────
+  // ── Capture & Analyze (NON-BLOCKING on location) ────────────────
   const captureAndAnalyze = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     setIsScanning(true);
@@ -96,10 +100,15 @@ export default function AuraPointsScanner({
     const base64Image = canvas.toDataURL("image/jpeg", 0.7);
 
     try {
+      // Send location if available — never block on it
       const res = await fetch("/api/aura-points", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64Image }),
+        body: JSON.stringify({
+          imageBase64: base64Image,
+          latitude: userLatitude ?? null,
+          longitude: userLongitude ?? null,
+        }),
       });
       const data: ScanResult = await res.json();
       clearInterval(progressInterval);
@@ -129,7 +138,13 @@ export default function AuraPointsScanner({
 
       // Save to history
       const history = JSON.parse(localStorage.getItem('aura_pointsHistory') || '[]');
-      history.push({ score: historyScore, timestamp: Date.now(), summary: historySummary, type: data.type });
+      history.push({
+        score: historyScore,
+        timestamp: Date.now(),
+        summary: historySummary,
+        type: data.type,
+        campus: data.locationContext?.campus,
+      });
       if (history.length > 50) history.shift();
       localStorage.setItem('aura_pointsHistory', JSON.stringify(history));
 
@@ -146,16 +161,17 @@ export default function AuraPointsScanner({
   // ── Derived values ──────────────────────────────────────────────
   const isIndoor = scanResult?.type === 'aura';
   const isBuilding = scanResult?.type === 'building';
-  const indoorResult = scanResult as IndoorAuraResult | null;
-  const buildingResult = scanResult as BuildingResult | null;
+  const indoorResult = isIndoor ? (scanResult as IndoorAuraResult) : null;
+  const buildingResult = isBuilding ? (scanResult as BuildingResult) : null;
 
-  const actualTotal = isIndoor && indoorResult
+  const actualTotal = indoorResult
     ? Object.values(indoorResult.factors).reduce((sum, f) => sum + f.score, 0)
     : 0;
   const grade = isIndoor ? getAuraGrade(actualTotal) : { grade: '', color: '#14b8a6' };
 
-  // Theme colors based on scan type
-  const themeColor = isBuilding ? '#6366f1' : '#14b8a6'; // indigo for buildings, teal for indoor
+  // Location badge helper
+  const locationCtx = scanResult?.locationContext;
+  const showCampusBadge = locationCtx && locationCtx.campus === 'UVA';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden font-sans animate-fade-in">
@@ -204,7 +220,16 @@ export default function AuraPointsScanner({
       {isIndoor && indoorResult && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 pointer-events-auto overflow-y-auto">
 
-          {/* Aura Feature Ring (new structured data) */}
+          {/* Campus Badge */}
+          {showCampusBadge && (
+            <div className="bg-orange-500/10 border border-orange-500/30 backdrop-blur-xl px-4 py-1.5 rounded-full mb-3 animate-fade-in">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">
+                UVA Campus {locationCtx?.confidence === 'low' ? '(estimated)' : ''}
+              </span>
+            </div>
+          )}
+
+          {/* Aura Feature Ring */}
           <div className="flex gap-2 mb-4 animate-fade-in">
             {Object.entries(indoorResult.features).map(([key, val]) => {
               const cfg = AURA_FEATURES[key as keyof typeof AURA_FEATURES];
@@ -307,13 +332,22 @@ export default function AuraPointsScanner({
       {isBuilding && buildingResult && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 pointer-events-auto overflow-y-auto">
 
+          {/* Campus Badge */}
+          {showCampusBadge && (
+            <div className="bg-orange-500/10 border border-orange-500/30 backdrop-blur-xl px-4 py-1.5 rounded-full mb-3 animate-fade-in">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-300">
+                UVA Campus {locationCtx?.confidence === 'low' ? '(estimated)' : ''}
+              </span>
+            </div>
+          )}
+
           {/* Building Name Badge */}
           <div className="bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-xl px-5 py-2 rounded-full mb-5 animate-fade-in">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-indigo-300">{buildingResult.buildingName}</span>
           </div>
 
           {/* Smiley + Mood Orbs */}
-          <div className="flex gap-8 mb-6 animate-score-reveal">
+          <div className="flex gap-8 mb-5 animate-score-reveal">
             {/* Smiley Score */}
             <div className="flex flex-col items-center">
               <div className="relative w-28 h-28 rounded-full flex flex-col items-center justify-center border-2 border-indigo-400"
@@ -340,6 +374,13 @@ export default function AuraPointsScanner({
           {/* Vibe */}
           <p className="text-lg font-bold text-white/90 mb-1 animate-fade-in capitalize">{buildingResult.vibe}</p>
 
+          {/* Reasoning */}
+          {buildingResult.reasoning && (
+            <p className="text-neutral-500 text-xs max-w-xs text-center mb-4 animate-fade-in italic">
+              {buildingResult.reasoning}
+            </p>
+          )}
+
           {/* Smile Score Reward */}
           {pointsAwarded && (
             <div className="bg-indigo-500/10 border border-indigo-500/30 backdrop-blur-xl px-5 py-2 rounded-full mb-5 animate-fade-in-up">
@@ -358,7 +399,7 @@ export default function AuraPointsScanner({
             <div className="w-full max-w-sm space-y-2 mb-6">
               {Object.entries(buildingResult.attributes).map(([key, val], i) => {
                 const cfg = BUILDING_ATTRIBUTES[key as keyof typeof BUILDING_ATTRIBUTES];
-                const attrGrade = getAuraGrade(val * 10); // 0-100 → 0-1000 scale for color
+                const attrGrade = getAuraGrade(val * 10);
                 return (
                   <div key={key}
                     className="animate-factor-slide bg-white/5 border border-white/5 rounded-xl p-3 backdrop-blur-md"

@@ -75,6 +75,8 @@ export interface BuildingResult {
   moodEmoji: string;
   attributes: BuildingAttributes;
   vibe: string;
+  reasoning: string;
+  locationContext?: LocationContext;
 }
 
 // ── Indoor Aura Types ─────────────────────────────────────────────
@@ -95,6 +97,13 @@ export interface IndoorAuraResult {
   factors: Record<string, { score: number; description: string }>;
   summary: string;
   recommendation: string;
+  locationContext?: LocationContext;
+}
+
+// ── Location Context ──────────────────────────────────────────────
+export interface LocationContext {
+  campus: 'UVA' | 'Unknown';
+  confidence: 'high' | 'low';
 }
 
 export type ScanResult = IndoorAuraResult | BuildingResult;

@@ -9,17 +9,61 @@ const factorPrompt = Object.entries(FACTOR_WEIGHTS)
   .map(([key, val]) => `    "${key}": { "score": <0 to ${val.max}>, "description": "<1 sentence why>" }`)
   .join(",\n");
 
-const SYSTEM_PROMPT = `You are an AI vision system integrated into the Aura Atlas AR wellness application.
+// Charlottesville, VA bounding box (rough)
+const UVA_BOUNDS = {
+  latMin: 38.00, latMax: 38.07,
+  lonMin: -78.52, lonMax: -78.44,
+};
 
-STEP 1: Scene Classification
-Classify the image into exactly ONE category:
-- "indoor" — any interior space (room, hallway, office, dorm, etc.)
-- "building_exterior" — exterior view of a building or structure
+function resolveLocationContext(lat: number | null, lon: number | null): { campus: string; confidence: string } {
+  if (lat != null && lon != null) {
+    if (lat >= UVA_BOUNDS.latMin && lat <= UVA_BOUNDS.latMax &&
+        lon >= UVA_BOUNDS.lonMin && lon <= UVA_BOUNDS.lonMax) {
+      return { campus: "UVA", confidence: "high" };
+    }
+    return { campus: "Unknown", confidence: "high" };
+  }
+  // No location — vision-only fallback (let GPT infer from visual cues)
+  return { campus: "Unknown", confidence: "low" };
+}
 
-STEP 2A: If "indoor" → Return BOTH aura features AND detailed factor scores.
-Return this JSON:
+const SYSTEM_PROMPT = `You are an AI vision system integrated into a real-time AR scanning application called Aura Atlas.
+
+CRITICAL:
+- DO NOT block, delay, or wait for location data.
+- DO NOT modify or replace any existing UI labels or classifications already generated.
+- Your role is to ADD structured intelligence on top of the current system.
+
+---
+
+STEP 0: LOCATION HANDLING (NON-BLOCKING)
+
+You will receive a "locationContext" in the user message with:
+- "campus": "UVA" | "Unknown"
+- "confidence": "high" | "low"
+
+Rules:
+- NEVER assume location is required
+- If campus is "Unknown" with low confidence, still proceed using ONLY visual analysis
+- If campus is "UVA", use that context to improve building identification
+- Include the locationContext in your response as-is
+
+---
+
+STEP 1: SCENE CLASSIFICATION
+
+Classify the image into exactly ONE:
+- "indoor" — any interior space
+- "building_exterior" — exterior view of a building
+
+---
+
+STEP 2: If "indoor" → AURA SYSTEM (DO NOT MODIFY EXISTING OUTPUT)
+
+Return ONLY additional structured data:
 {
   "type": "aura",
+  "locationContext": { "campus": "...", "confidence": "..." },
   "features": {
     "lighting": <0-100>,
     "cleanliness": <0-100>,
@@ -28,7 +72,7 @@ Return this JSON:
     "calmness": <0-100>,
     "aesthetic": <0-100>
   },
-  "explanation": "<short explanation of detected features>",
+  "explanation": "short, natural explanation of why this space feels this way",
   "factors": {
 ${factorPrompt}
   },
@@ -49,21 +93,26 @@ Indoor factor scoring guidelines:
 - water_elements (max 50): Water features, aquariums = high. None = 0.
 - personal_touches (max 50): Art, photos, personality = high. Generic/institutional = low.
 
-Be honest and specific. A typical dorm room might score 400-550. A spa might score 800+. A fluorescent office might score 200-350.
+Be honest and specific. A typical dorm room might score 400-550. A spa might score 800+.
 
-STEP 2B: If "building_exterior" → Detect the building and return mood data.
-First check if the building matches known UVA buildings:
-- Olsson Hall: traditional academic engineering building (brick, structured)
-- Rice Hall: modern glass computer science building (glass facade, contemporary)
+---
 
-Return this JSON:
+STEP 3: If "building_exterior" → SMILEY + MOOD SYSTEM
+
+Identify if the building resembles:
+- Olsson Hall → traditional academic, structured engineering building (brick, columns)
+- Rice Hall → modern glass-heavy computer science building (glass facade, contemporary)
+- Otherwise → "Unknown UVA Building" (if locationContext.campus is "UVA") or "Unknown Building"
+
+Return:
 {
   "type": "building",
-  "buildingName": "Olsson Hall" | "Rice Hall" | "Unknown Building",
+  "locationContext": { "campus": "...", "confidence": "..." },
+  "buildingName": "Olsson Hall" | "Rice Hall" | "Unknown UVA Building" | "Unknown Building",
   "smileyScore": <0-100>,
-  "smileyEmoji": "<one of: 😄🙂😐😕😞>",
+  "smileyEmoji": <one of "😄" "🙂" "😐" "😕" "😞">,
   "moodScore": <0-100>,
-  "moodEmoji": "<one of: 😄🙂😐😕😞>",
+  "moodEmoji": <one of "😄" "🙂" "😐" "😕" "😞">,
   "attributes": {
     "architecture": <0-100>,
     "modernity": <0-100>,
@@ -71,22 +120,38 @@ Return this JSON:
     "maintenance": <0-100>,
     "openness": <0-100>
   },
-  "vibe": "<short phrase like 'innovative and energetic' or 'academic and structured'>"
+  "vibe": "short phrase like 'innovative and energetic' or 'academic and structured'",
+  "reasoning": "brief explanation of visual cues (glass, symmetry, students, lighting, etc.)"
 }
 
 Building scoring guidelines:
-- Rice Hall: Boost modernity, glass, openness. Higher smiley (85-95), higher mood (75-90).
-- Olsson Hall: More traditional, structured. Moderate smiley (70-82), moderate mood (65-75).
-- Unknown buildings: Score based on visual impression honestly.
+- Rice Hall: High modernity, glass, openness. smileyScore 85-95, moodScore 75-90. Vibe: "innovative", "tech-driven", "energetic".
+- Olsson Hall: More traditional, structured, academic. smileyScore 70-82, moodScore 65-75. Vibe: "focused", "academic", "structured".
+- Unknown UVA Building: Estimate based on visual features. Keep scores realistic (60-85 range).
+- Unknown Building: Score honestly based on what you see.
+
+---
 
 IMPORTANT RULES:
-- Return ONLY clean JSON, nothing else.
-- Always include the "type" field as the first key.
-- Be concise and consistent in descriptions.`;
+- ALWAYS return a result — NEVER fail due to missing location
+- Keep responses concise and consistent
+- DO NOT remove or overwrite existing labels like "Cozy Retreat"
+- ADD data only
+- OUTPUT STRICTLY AS CLEAN JSON`;
 
 export async function POST(req: Request) {
   try {
-    const { imageBase64 } = await req.json();
+    const { imageBase64, latitude, longitude } = await req.json();
+
+    // Step 0: Non-blocking location resolution
+    const locationContext = resolveLocationContext(
+      latitude ?? null,
+      longitude ?? null
+    );
+
+    const locationHint = latitude != null && longitude != null
+      ? `User location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+      : "User location: unavailable (proceed with visual-only analysis)";
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -95,6 +160,10 @@ export async function POST(req: Request) {
         {
           role: "user",
           content: [
+            {
+              type: "text",
+              text: `${locationHint}\nlocationContext: ${JSON.stringify(locationContext)}\n\nAnalyze this image:`
+            },
             { type: "image_url", image_url: { url: imageBase64 } }
           ]
         }
@@ -103,6 +172,12 @@ export async function POST(req: Request) {
     });
 
     const result = JSON.parse(response.choices[0].message?.content || "{}");
+
+    // Ensure locationContext is always present in response
+    if (!result.locationContext) {
+      result.locationContext = locationContext;
+    }
+
     return NextResponse.json(result);
 
   } catch (error) {

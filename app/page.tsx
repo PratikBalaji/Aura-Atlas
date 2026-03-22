@@ -570,6 +570,8 @@ export default function Home() {
         <AuraPointsScanner
           onClose={() => setShowAuraPointsScanner(false)}
           onPointsAwarded={(newScore) => setSmileScore(newScore)}
+          userLatitude={userLocation.latitude}
+          userLongitude={userLocation.longitude}
         />
       )}
 
