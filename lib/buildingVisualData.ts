@@ -106,31 +106,106 @@ const olssonHall: BuildingVisualProfile = {
 };
 
 // ════════════════════════════════════════════════════════════════
+//  RICE HALL — trained from 3 reference images
+// ════════════════════════════════════════════════════════════════
+
+const riceHall: BuildingVisualProfile = {
+  buildingId: "rice-hall",
+  name: "Rice Hall",
+  signage: [
+    "\"RICE HALL\" text visible on the building facade near the entrance",
+    "Possible signage reading \"Department of Computer Science\" near entrance level",
+  ],
+  architecturalFeatures: [
+    "Four-to-five-story modern building with a striking glass-and-steel curtain wall facade",
+    "Distinctive curved/swooping overhanging roofline that extends beyond the building walls — the most recognizable feature",
+    "Tall vertical concrete/stone fins (pilasters) running the full height of the glass facade, creating a rhythmic columnar pattern",
+    "Large floor-to-ceiling glass panels between the vertical fins, giving the building a transparent, open appearance",
+    "Red/brown brick sections on the lower levels and side walls, contrasting with the modern glass front",
+    "Corner section features a fully glazed glass atrium/stairwell that wraps around the building corner",
+    "Flat, modern entrance at ground level — no grand staircase or portico",
+    "Recessed ground floor with covered walkway/colonnade at the base",
+    "Clean geometric lines throughout — no classical ornamentation",
+  ],
+  materials: [
+    "Glass curtain wall (blue-tinted or clear, reflective in sunlight)",
+    "Precast concrete or limestone vertical fins/columns",
+    "Red/brown brick on side walls and lower sections",
+    "Steel structural framing visible through glass",
+    "Concrete/stone at the base and entrance level",
+    "Metal roofline edge with distinctive curved overhang profile",
+  ],
+  viewDescriptions: [
+    {
+      angle: "Front — straight on",
+      description:
+        "A dramatic modern facade dominates the view: tall vertical concrete fins alternate with floor-to-ceiling glass panels across four-plus stories. The roofline swoops outward in a distinctive curved overhang. Red brick is visible on the side walls. Green trees and lawn in the foreground. The building reads as unmistakably contemporary against UVA's otherwise traditional campus.",
+    },
+    {
+      angle: "Corner view — glass atrium side",
+      description:
+        "The corner of the building reveals a fully glazed glass atrium wrapping around the corner junction. The curved roofline overhang is prominently visible from this angle. Red brick base contrasts sharply with the glass upper stories. A street and bike racks are visible at ground level. The vertical fin pattern continues around the corner.",
+    },
+    {
+      angle: "Front — looking up",
+      description:
+        "Looking upward at the entrance, the vertical concrete fins tower overhead with glass panels between them. The curved roofline overhang is dramatic from this perspective. The entrance doors are visible at ground level beneath the glass facade. The building appears very tall and modern from this vantage point.",
+    },
+  ],
+  distinguishingFromSimilar: [
+    "Unlike Olsson Hall (traditional red brick with white columns), Rice Hall is predominantly glass and steel with a modern aesthetic",
+    "Unlike Thornton Hall (older engineering building, more industrial), Rice Hall is sleek and contemporary",
+    "The curved/swooping roofline overhang is UNIQUE on the UVA campus — no other building has this feature",
+    "The tall vertical concrete fins with glass curtain wall are distinctive to Rice Hall",
+    "Only engineering building with a fully glazed corner atrium",
+    "The most modern-looking building in the engineering quad",
+  ],
+  surroundingContext: [
+    "Located in the UVA engineering quad area, adjacent to Olsson Hall and near Thornton Hall",
+    "Houses the Department of Computer Science",
+    "Street-level entrance with bike racks often visible nearby",
+    "Surrounded by mature trees and campus walkways",
+    "Brick walkways and roads visible at ground level",
+  ],
+};
+
+// ════════════════════════════════════════════════════════════════
 //  REGISTRY — add new buildings here as they are "trained"
 // ════════════════════════════════════════════════════════════════
 
-export const BUILDING_VISUAL_DATA: BuildingVisualProfile[] = [olssonHall];
+export const BUILDING_VISUAL_DATA: BuildingVisualProfile[] = [olssonHall, riceHall];
+
+/** O(1) lookup map — rebuilt once at module load, not on every request. */
+const _profileMap = new Map<string, BuildingVisualProfile>(
+  BUILDING_VISUAL_DATA.map((b) => [b.buildingId, b])
+);
 
 /**
- * Look up a visual profile by building ID.
+ * Look up a visual profile by building ID.  O(1) via pre-built Map.
  */
 export function getVisualProfile(
   buildingId: string
 ): BuildingVisualProfile | undefined {
-  return BUILDING_VISUAL_DATA.find((b) => b.buildingId === buildingId);
+  return _profileMap.get(buildingId);
 }
 
 /**
  * Build a concise text block describing a building's visual features
- * for injection into an LLM prompt.  Keep it tight — tokens matter.
+ * for injection into an LLM prompt.
+ *
+ * Token-optimised: caps architectural features at 5 most important,
+ * and focuses on signage + distinguishing traits (highest signal).
  */
 export function buildVisualPromptBlock(profile: BuildingVisualProfile): string {
   const lines: string[] = [];
 
   lines.push(`### ${profile.name}`);
   lines.push(`Signage: ${profile.signage.join("; ")}`);
-  lines.push(`Key features: ${profile.architecturalFeatures.join("; ")}`);
-  lines.push(`Materials: ${profile.materials.join("; ")}`);
+  // Take the first 5 features — they're ordered by importance
+  lines.push(
+    `Key features: ${profile.architecturalFeatures.slice(0, 5).join("; ")}`
+  );
+  lines.push(`Materials: ${profile.materials.slice(0, 4).join("; ")}`);
   lines.push(
     `Distinguishing traits: ${profile.distinguishingFromSimilar.join("; ")}`
   );
@@ -139,18 +214,32 @@ export function buildVisualPromptBlock(profile: BuildingVisualProfile): string {
 }
 
 /**
+ * Ultra-compact prompt block — signage + top 3 distinguishing traits only.
+ * Use when many buildings need to fit in limited token budget.
+ */
+export function buildCompactVisualBlock(
+  profile: BuildingVisualProfile
+): string {
+  return `**${profile.name}**: ${profile.signage[0]}. ${profile.distinguishingFromSimilar.slice(0, 3).join("; ")}`;
+}
+
+/**
  * Build prompt blocks for a set of building IDs (e.g. the nearest ones).
  * Buildings without visual data are silently skipped.
+ *
+ * @param compact — if true, use ultra-compact format (fewer tokens)
  */
 export function buildVisualPromptForBuildings(
-  buildingIds: string[]
+  buildingIds: string[],
+  compact = false
 ): string {
-  const blocks = buildingIds
-    .map((id) => {
-      const profile = getVisualProfile(id);
-      return profile ? buildVisualPromptBlock(profile) : null;
-    })
-    .filter(Boolean);
+  const builder = compact ? buildCompactVisualBlock : buildVisualPromptBlock;
+  const blocks: string[] = [];
+
+  for (const id of buildingIds) {
+    const profile = _profileMap.get(id);
+    if (profile) blocks.push(builder(profile));
+  }
 
   if (blocks.length === 0) return "";
 

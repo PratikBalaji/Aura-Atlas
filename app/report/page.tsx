@@ -19,12 +19,21 @@ export default function AuraReport() {
   const [smileScore, setSmileScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [miles, setMiles] = useState(0);
+  const [lastAuraPoints, setLastAuraPoints] = useState(0);
+  const [auraScansCount, setAuraScansCount] = useState(0);
 
   useEffect(() => {
     // Load snapshot from localStorage
     setSmileScore(parseInt(localStorage.getItem('aura_smileScore') || '0'));
     setStreak(parseInt(localStorage.getItem('aura_streak') || '0'));
     setMiles(parseInt(localStorage.getItem('aura_capOneMiles') || '0'));
+
+    // Load Aura Points history
+    const history = JSON.parse(localStorage.getItem('aura_pointsHistory') || '[]');
+    if (history.length > 0) {
+      setLastAuraPoints(history[history.length - 1].score);
+      setAuraScansCount(history.length);
+    }
   }, []);
 
   return (
@@ -68,6 +77,24 @@ export default function AuraReport() {
           <div className="text-5xl font-black tabular-nums">{miles.toLocaleString()}</div>
           <div className="mt-4 text-xs text-neutral-500 font-medium">💳 Financial Resilience</div>
         </div>
+
+        {/* Aura Points (Environment Scanner) */}
+        {auraScansCount > 0 && (
+          <div className="md:col-span-3 bg-white/5 border border-white/10 p-8 rounded-[2rem] backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-600/10 blur-3xl -mr-16 -mt-16 group-hover:bg-teal-600/20 transition-all" />
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400 mb-2 block">Last Environment Scan</span>
+                <div className="text-5xl font-black tabular-nums">{lastAuraPoints.toLocaleString()}<span className="text-lg text-neutral-500 ml-1">/ 1,000</span></div>
+                <div className="mt-4 text-xs text-neutral-500 font-medium">✨ Aura Points</div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-black tabular-nums text-teal-400">{auraScansCount}</div>
+                <div className="text-xs text-neutral-500 font-medium mt-1">Total Scans</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* The Big Chart */}
         <div className="md:col-span-3 bg-neutral-900/50 border border-white/5 p-8 rounded-[2.5rem] shadow-inner">

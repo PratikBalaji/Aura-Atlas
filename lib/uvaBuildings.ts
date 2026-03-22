@@ -132,6 +132,7 @@ export const UVA_BUILDINGS: UVABuilding[] = [
     description: "Innovation hub with intense focus energy — high drive meets deadline pressure.",
     emoji_vibe: ["💻", "🧠", "⚡"],
     category: "academic",
+    visual_features: "Modern glass curtain wall, curved swooping roofline overhang, vertical concrete fins, corner glass atrium, red brick base — most modern building in engineering quad",
   },
   {
     id: "thornton-hall",

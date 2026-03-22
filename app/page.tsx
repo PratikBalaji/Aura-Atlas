@@ -22,6 +22,11 @@ import ThermalMoodMatrix from "@/components/ThermalMoodMatrix";
 import { ALL_COLLEGES } from "@/lib/collegeList";
 import AuraLens from "@/components/AuraLens";
 import PresageMonitor from "@/components/PresageMonitor";
+import AuraPointsButton from "@/components/AuraPointsButton";
+
+const AuraPointsScanner = dynamic(() => import("@/components/AuraPointsScanner"), {
+  ssr: false,
+});
 
 const Map3DView = dynamic(() => import("@/components/Map3DView"), {
   ssr: false,
@@ -47,6 +52,7 @@ export default function Home() {
   const [isNewUser, setIsNewUser] = useState(true);
   const [showThermalRadar, setShowThermalRadar] = useState(false);
   const [showQuietRoute, setShowQuietRoute] = useState(false);
+  const [showAuraPointsScanner, setShowAuraPointsScanner] = useState(false);
 
   const didAutoCenterRef = useRef(false);
   const city = CITIES[cityIndex];
@@ -435,7 +441,8 @@ export default function Home() {
             <ThermalMoodMatrix onToggle={setShowThermalRadar} lat={city.lat} lng={city.lng} />
             <AuraLens isActive={isARModeActive} setIsActive={setIsARModeActive} />
             <PresageMonitor />
-            
+            <AuraPointsButton isActive={showAuraPointsScanner} onToggle={() => setShowAuraPointsScanner(!showAuraPointsScanner)} />
+
             {/* Locate Me */}
             {userLocation.latitude !== null && (
               <button 
@@ -557,6 +564,14 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Aura Points Scanner */}
+      {showAuraPointsScanner && (
+        <AuraPointsScanner
+          onClose={() => setShowAuraPointsScanner(false)}
+          onPointsAwarded={(newScore) => setSmileScore(newScore)}
+        />
+      )}
 
       {/* Daily check-in modal */}
       {isModalOpen && (
