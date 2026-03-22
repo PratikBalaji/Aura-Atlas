@@ -184,9 +184,7 @@ export default function JournalPage() {
       <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6">
         <section className="py-10 text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-4xl">
-            <span className="bg-gradient-to-r from-teal-300 to-indigo-300 bg-clip-text text-transparent">
-              Mood Journal
-            </span>
+            Mood Journal
           </h1>
           <p className="mt-3 text-sm text-[var(--muted-text)]">Track how you feel over time.</p>
         </section>
@@ -315,33 +313,23 @@ export default function JournalPage() {
                 </div>
               )}
 
-              <motion.div className="space-y-2">
-                <motion.div animate={selectedEmotion ? { scale: [1, 1.02, 1] } : {}} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
-                  <Button
-                    type="submit"
-                    isLoading={isBusy}
-                    disabled={!isDailyCheckInComplete || isBusy}
-                    className="w-full relative overflow-hidden"
-                  >
-                    <span className="relative z-10">Submit Daily Check-In</span>
-                    {selectedMood && (
-                      <motion.div
-                        className="absolute inset-0 opacity-20"
-                        style={{ backgroundColor: selectedMood.color }}
-                        animate={{ opacity: [0.1, 0.3, 0.1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                      />
-                    )}
-                  </Button>
-                </motion.div>
+              <div className="space-y-2">
+                <Button
+                  type="submit"
+                  isLoading={isBusy}
+                  disabled={!isDailyCheckInComplete || isBusy}
+                  className="w-full"
+                >
+                  Submit Daily Check-In
+                </Button>
                 {isUploading ? <p className="text-xs text-teal-500">Uploading image...</p> : null}
-                {isSaving ? <p className="text-xs text-indigo-500">Saving entry...</p> : null}
-                {saveSuccess ? <p className="text-xs font-medium text-emerald-300">Entry saved ✓</p> : null}
-                {saveError ? <p className="text-xs text-red-300">{saveError}</p> : null}
+                {isSaving ? <p className="text-xs text-slate-400">Saving entry...</p> : null}
+                {saveSuccess ? <p className="text-xs font-medium text-emerald-400">Entry saved</p> : null}
+                {saveError ? <p className="text-xs text-red-400">{saveError}</p> : null}
                 {!isDailyCheckInComplete && !isBusy ? (
-                  <p className="text-xs text-amber-300">Complete all 5 check-in questions to submit.</p>
+                  <p className="text-xs text-slate-400">Complete all 5 check-in questions to submit.</p>
                 ) : null}
-              </motion.div>
+              </div>
             </form>
 
             <aside className="space-y-6">
@@ -373,7 +361,7 @@ export default function JournalPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-[var(--border-soft)] bg-gradient-to-br from-teal-500/10 to-indigo-500/10 p-6">
+              <div className="rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-1)] p-6">
                 <p className="text-xs uppercase tracking-[0.14em] text-[var(--muted-text)]">Selected Emotion</p>
                 <div className="mt-3 flex items-center gap-3">
                   <span className="text-2xl">{selectedMood?.icon ?? "🫶"}</span>
@@ -397,39 +385,31 @@ export default function JournalPage() {
           <MoodBalanceGraph entries={entries} />
         </section>
 
-        {/* AI Insight & Global Pulse Card */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="pb-10"
-        >
-          <div className="grid md:grid-cols-2 gap-6 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl">
-            {/* Left Half: Individual Forecast */}
+        <section className="pb-10">
+          <div className="grid md:grid-cols-2 gap-6 rounded-3xl border border-[var(--border-soft)] bg-[var(--surface-1)] p-6 backdrop-blur-sm">
             <div className="flex flex-col justify-center space-y-2">
-              <h3 className="text-sm tracking-widest text-[var(--muted-text)] uppercase font-semibold">Individual Forecast</h3>
+              <h3 className="text-xs uppercase tracking-[0.14em] text-[var(--muted-text)] font-medium">Individual Forecast</h3>
               {(() => {
                 const isHighIntensityStreak = entries.length >= 2 && entries[0].intensity > 70 && entries[1].intensity > 70;
                 const isRecoveryForecast = entries.length >= 1 && entries[0].emotion === 'Calm';
 
                 if (isHighIntensityStreak) {
-                  return <p className="text-lg font-medium text-[var(--foreground)]">🔥 High Intensity Streak: You are in a high-output phase. Watch for burnout.</p>;
+                  return <p className="text-base text-[var(--foreground)]">High intensity streak — you are in a high-output phase. Watch for burnout.</p>;
                 } else if (isRecoveryForecast) {
-                  return <p className="text-lg font-medium text-[var(--foreground)]">🌊 Recovery Forecast: Your energy is stabilizing. Great time for reflection.</p>;
+                  return <p className="text-base text-[var(--foreground)]">Recovery forecast — your energy is stabilizing. Great time for reflection.</p>;
                 } else {
-                  return <p className="text-lg font-medium text-[var(--foreground)]">✨ Balance Forecast: Your mood is steadily processing. Keep tracking to learn more.</p>;
+                  return <p className="text-base text-[var(--foreground)]">Balance forecast — your mood is steadily processing. Keep tracking to learn more.</p>;
                 }
               })()}
             </div>
-            {/* Right Half: Global Pulse */}
-            <div className="flex flex-col justify-center space-y-2 border-t border-white/10 pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-              <h3 className="text-sm tracking-widest text-[var(--muted-text)] uppercase font-semibold">Community Pulse</h3>
+            <div className="flex flex-col justify-center space-y-2 border-t border-[var(--border-soft)] pt-4 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+              <h3 className="text-xs uppercase tracking-[0.14em] text-[var(--muted-text)] font-medium">Community Pulse</h3>
               {communityPulse ? (() => {
                 const pulseMood = MOODS.find(m => m.label === communityPulse.dominant_mood);
                 const emoji = pulseMood?.icon || '😐';
                 return (
-                  <p className="text-lg font-medium text-[var(--foreground)] leading-relaxed">
-                    🌍 Most users are feeling <motion.span animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 2 }} className="inline-block">{emoji}</motion.span>. You are part of a global wave of <strong>{communityPulse.dominant_mood}</strong>.
+                  <p className="text-base text-[var(--foreground)] leading-relaxed">
+                    Most users are feeling {emoji}. You are part of a wave of <strong>{communityPulse.dominant_mood}</strong>.
                   </p>
                 );
               })() : (
@@ -437,7 +417,7 @@ export default function JournalPage() {
               )}
             </div>
           </div>
-        </motion.section>
+        </section>
 
         <section className="py-10">
           <div className="mb-4">
@@ -489,7 +469,7 @@ export default function JournalPage() {
               transition={{ duration: 20, ease: "linear" }}
             />
 
-            <div className="relative z-10 w-full max-w-2xl bg-black/40 backdrop-blur-md border border-white/20 p-10 rounded-3xl text-center shadow-2xl">
+            <div className="relative z-10 w-full max-w-2xl bg-black/40 backdrop-blur-md border border-white/15 p-10 rounded-3xl text-center">
               {(() => {
                 let quote = "Every feeling has its own quiet dignity.";
                 if (savedMood === "Happy") quote = "Radiate your light; the world is catching your glow.";

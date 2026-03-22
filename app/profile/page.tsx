@@ -496,16 +496,13 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-[var(--background)] page-enter pb-20">
             <div className="mx-auto max-w-4xl px-4 pt-12">
-                <header className="mb-10 text-center relative py-12 px-6 rounded-3xl overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-purple-500/5 to-transparent animate-gradient-slow" />
-                    <div className="relative z-10">
-                        <h1 className="text-4xl font-bold tracking-tight text-[var(--foreground)] mb-3">
-                            Profile & Settings
-                        </h1>
-                        <p className="text-lg text-[var(--foreground-muted)] max-w-xl mx-auto">
-                            Manage your workspace, emergency contacts, and campus integration.
-                        </p>
-                    </div>
+                <header className="mb-10 text-center py-10 px-6">
+                    <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] mb-3">
+                        Profile & Settings
+                    </h1>
+                    <p className="text-sm text-[var(--muted-text)] max-w-xl mx-auto">
+                        Manage your workspace, emergency contacts, and campus integration.
+                    </p>
                 </header>
 
                 <div className="mb-8 grid gap-8 md:grid-cols-1">
@@ -515,13 +512,13 @@ export default function ProfilePage() {
                             <div className="flex bg-[var(--background)] p-1 rounded-xl">
                                 <button
                                     onClick={() => setTheme("dark")}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${theme === "dark" ? "bg-teal-500 text-white shadow-lg" : "text-[var(--foreground-muted)]"}`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === "dark" ? "bg-teal-600 text-white" : "text-[var(--muted-text)]"}`}
                                 >
                                     Dark
                                 </button>
                                 <button
                                     onClick={() => setTheme("light")}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${theme === "light" ? "bg-teal-500 text-white shadow-lg" : "text-[var(--foreground-muted)]"}`}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${theme === "light" ? "bg-teal-600 text-white" : "text-[var(--muted-text)]"}`}
                                 >
                                     Light
                                 </button>
@@ -530,15 +527,13 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="mb-10 app-surface p-8 rounded-3xl border border-[var(--border-soft)] relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl -mr-32 -mt-32 transition-colors duration-500 group-hover:bg-teal-500/10" />
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -ml-32 -mb-32 transition-colors duration-500 group-hover:bg-indigo-500/10" />
+                <div className="mb-10 app-surface p-8 rounded-3xl border border-[var(--border-soft)] relative">
 
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <div className="relative">
                             <div
                                 onClick={() => setShowAvatars(!showAvatars)}
-                                className="h-24 w-24 rounded-full bg-[var(--background)] p-1 ring-4 ring-teal-500/20 overflow-hidden cursor-pointer hover:ring-teal-500/50 transition-all shadow-xl"
+                                className="h-24 w-24 rounded-full bg-[var(--background)] p-1 ring-2 ring-[var(--border-soft)] overflow-hidden cursor-pointer hover:ring-teal-500/40 transition-all"
                             >
                                 {profile?.avatar_url ? (
                                     <img src={profile.avatar_url} alt="Profile avatar" className="w-full h-full object-cover rounded-full" />
@@ -551,7 +546,7 @@ export default function ProfilePage() {
                             <button
                                 onClick={() => setShowAvatars(!showAvatars)}
                                 aria-label="Choose profile avatar"
-                                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-teal-500 flex items-center justify-center text-sm shadow-lg hover:scale-110 transition-transform border-4 border-[var(--surface-1)]"
+                                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-teal-600 flex items-center justify-center text-sm hover:bg-teal-500 transition-colors border-3 border-[var(--surface-1)]"
                             >
                                 <Pencil className="h-4 w-4" />
                             </button>
@@ -577,23 +572,23 @@ export default function ProfilePage() {
                                     </button>
                                 )}
                             </div>
-                            <div className="text-[var(--foreground-muted)] font-medium mb-3 flex items-center justify-center md:justify-start gap-2">
-                                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                            <div className="text-[var(--muted-text)] font-medium mb-3 flex items-center justify-center md:justify-start gap-2">
+                                <span className="h-2 w-2 rounded-full bg-teal-500" />
                                 {userEmail}
                             </div>
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--background)] text-xs font-mono font-bold text-teal-500 border border-teal-500/20">
-                                USER_ID: {profile?.unique_code || "ALPHA-001"}
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] text-xs font-mono text-[var(--muted-text)] border border-[var(--border-soft)]">
+                                {profile?.unique_code || "—"}
                             </div>
                         </div>
 
                         <div className="flex gap-4">
-                            <div className="text-center px-6 py-3 rounded-2xl bg-[var(--background)] border border-[var(--border-soft)]">
-                                <div className="text-2xl font-black text-teal-500">{isLoading ? ".." : checkInCount}</div>
-                                <div className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Check-ins</div>
+                            <div className="text-center px-6 py-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-soft)]">
+                                <div className="text-2xl font-semibold text-[var(--foreground)]">{isLoading ? ".." : checkInCount}</div>
+                                <div className="text-[10px] font-medium text-[var(--muted-text)] uppercase tracking-wider">Check-ins</div>
                             </div>
-                            <div className="text-center px-6 py-3 rounded-2xl bg-[var(--background)] border border-[var(--border-soft)]">
-                                <div className="text-2xl font-black text-purple-500">{isLoading ? ".." : journalCount}</div>
-                                <div className="text-[10px] font-bold text-[var(--foreground-muted)] uppercase tracking-wider">Journals</div>
+                            <div className="text-center px-6 py-3 rounded-2xl bg-[var(--surface-2)] border border-[var(--border-soft)]">
+                                <div className="text-2xl font-semibold text-[var(--foreground)]">{isLoading ? ".." : journalCount}</div>
+                                <div className="text-[10px] font-medium text-[var(--muted-text)] uppercase tracking-wider">Journals</div>
                             </div>
                         </div>
                     </div>
@@ -716,8 +711,7 @@ export default function ProfilePage() {
                 <div className="space-y-8 mt-12">
                 {/* ONLY SHOW IF CAMPUS IS SELECTED */}
                 {campusAffiliation && (
-                    <div className="app-surface p-6 rounded-3xl border border-orange-500/20 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-3xl -mr-16 -mt-16" />
+                    <div className="app-surface p-6 rounded-3xl border border-[var(--border-soft)]">
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h4 className="text-xl font-bold text-[var(--foreground)] flex items-center gap-2">
@@ -728,12 +722,12 @@ export default function ProfilePage() {
                             <button 
                                 onClick={isCanvasLinked ? handleCanvasDisconnect : handleCanvasConnect} 
                                 disabled={!isCanvasLinked && canvasSyncStatus !== "Connect LMS"}
-                                className={`px-6 py-2.5 rounded-2xl font-bold text-sm transition-all shadow-lg ${
+                                className={`px-6 py-2.5 rounded-2xl font-semibold text-sm transition-colors ${
                                     isCanvasLinked 
                                         ? "bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20" 
                                         : canvasSyncStatus !== "Connect LMS" 
-                                            ? "bg-[var(--background)] text-[var(--foreground-muted)] cursor-not-allowed animate-pulse" 
-                                            : "bg-orange-500 text-white hover:bg-orange-600 hover:scale-105 active:scale-95"
+                                            ? "bg-[var(--background)] text-[var(--muted-text)] cursor-not-allowed"
+                                            : "bg-teal-600 text-white hover:bg-teal-500"
                                 }`}
                             >
                                 {isCanvasLinked ? "Unsync Canvas" : canvasSyncStatus}
@@ -746,14 +740,14 @@ export default function ProfilePage() {
                                     
                                     {/* Slider (Demo text removed to look professional) */}
                                     <div className="mb-4 bg-[var(--background)] p-4 rounded-2xl border border-[var(--border-soft)]">
-                                        <p className="text-xs font-black text-teal-500 mb-3 uppercase tracking-widest">Aura Sync: Adjust Mood</p>
+                                        <p className="text-xs font-medium text-[var(--muted-text)] mb-3 uppercase tracking-wider">Aura Sync: Adjust Mood</p>
                                         <input 
                                             type="range" min="1" max="100" 
                                             value={demoMoodScore} 
                                             onChange={(e) => setDemoMoodScore(Number(e.target.value))} 
                                             className="w-full h-2 bg-[var(--surface-1)] rounded-lg appearance-none cursor-pointer accent-teal-500" 
                                         />
-                                        <div className="flex justify-between text-[10px] mt-2 font-black uppercase tracking-tighter">
+                                        <div className="flex justify-between text-[10px] mt-2 font-medium uppercase tracking-wide">
                                             <span className="text-red-400">Burnout</span>
                                             <span className="text-teal-500 text-sm">Score: {demoMoodScore}</span>
                                             <span className="text-green-400">Peak Flow</span>
@@ -770,7 +764,7 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <h5 className="text-xs font-black uppercase text-[var(--foreground-muted)] tracking-widest pl-1">Live Feed: Next 72 Hours</h5>
+                                        <h5 className="text-xs font-medium uppercase text-[var(--muted-text)] tracking-wider pl-1">Live Feed: Next 72 Hours</h5>
                                         <div className="grid gap-3">
                                             {assignments.map((task) => (
                                                 <div key={task.id} className="flex justify-between items-center bg-[var(--background)] p-4 rounded-2xl border border-[var(--border-soft)] hover:border-teal-500/30 transition-all hover:translate-x-1">
@@ -778,7 +772,7 @@ export default function ProfilePage() {
                                                         <p className="text-[var(--foreground)] font-bold text-sm">{task.title}</p>
                                                         <p className="text-xs font-medium text-[var(--foreground-muted)]">{task.course} • {task.due}</p>
                                                     </div>
-                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider border ${
                                                         task.stress === 'High' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                                         task.stress === 'Medium' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                                         'bg-green-500/10 text-green-400 border-green-500/20'
@@ -794,19 +788,18 @@ export default function ProfilePage() {
                             )}
                         </div>
                     )}
-                    <div className="app-surface p-6 rounded-3xl border border-indigo-500/20 flex justify-between items-center relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl -mr-16 -mt-16" />
-                        <div className="relative z-10">
-                            <h4 className="text-lg font-bold text-[var(--foreground)]">Aura Atlas Pro</h4>
-                            <p className="text-sm text-[var(--foreground-muted)] mt-1">$5.49/mo for advanced mood forecasting.</p>
+                    <div className="app-surface p-6 rounded-3xl border border-[var(--border-soft)] flex justify-between items-center">
+                        <div>
+                            <h4 className="text-lg font-semibold text-[var(--foreground)]">Aura Atlas Pro</h4>
+                            <p className="text-sm text-[var(--muted-text)] mt-1">$5.49/mo for advanced mood forecasting.</p>
                         </div>
-                        <button 
-                            onClick={() => setShowCheckout(true)} 
+                        <button
+                            onClick={() => setShowCheckout(true)}
                             disabled={isPremium}
-                            className={`px-6 py-2.5 rounded-2xl font-bold text-sm transition-all shadow-lg relative z-10 ${
-                                isPremium 
-                                    ? "bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 cursor-default" 
-                                    : "bg-indigo-500 text-white hover:bg-indigo-600 hover:scale-105 active:scale-95 shadow-indigo-500/20"
+                            className={`px-6 py-2.5 rounded-2xl font-semibold text-sm transition-colors ${
+                                isPremium
+                                    ? "bg-teal-500/10 text-teal-500 border border-teal-500/20 cursor-default"
+                                    : "bg-teal-600 text-white hover:bg-teal-500"
                             }`}
                         >
                             {isPremium ? "Active" : "Upgrade"}
@@ -846,12 +839,12 @@ export default function ProfilePage() {
                             {campusPeers.map((peer) => (
                                 <div key={peer.id} className="flex items-center justify-between p-4 rounded-3xl bg-[var(--background)] border border-[var(--border-soft)] hover:border-teal-500/40 transition-all group">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-2xl bg-teal-500/10 flex items-center justify-center text-xl border border-teal-500/20 group-hover:scale-110 transition-transform">
+                                        <div className="h-12 w-12 rounded-2xl bg-[var(--surface-2)] flex items-center justify-center text-sm font-mono text-[var(--muted-text)] border border-[var(--border-soft)]">
                                             {peer.unique_code?.substring(0, 2)}
                                         </div>
                                         <div>
-                                            <p className="text-[var(--foreground)] font-bold">Campus Peer <span className="text-[var(--foreground-muted)] font-mono text-xs ml-2">#{peer.unique_code}</span></p>
-                                            <p className="text-xs text-teal-500 font-bold uppercase tracking-widest mt-0.5">Classmate</p>
+                                            <p className="text-[var(--foreground)] font-medium">Campus Peer <span className="text-[var(--muted-text)] font-mono text-xs ml-2">#{peer.unique_code}</span></p>
+                                            <p className="text-xs text-[var(--muted-text)] mt-0.5">Classmate</p>
                                         </div>
                                     </div>
 
@@ -859,7 +852,7 @@ export default function ProfilePage() {
                                         type="button"
                                         onClick={() => handleAddCampusPeer(peer.unique_code ?? undefined)}
                                         aria-label={`Send friend request to ${peer.unique_code || "this classmate"}`}
-                                        className="px-5 py-2 text-xs font-bold rounded-xl bg-teal-500/10 text-teal-500 hover:bg-teal-500 hover:text-white hover:shadow-lg transition-all"
+                                        className="px-5 py-2 text-xs font-medium rounded-xl bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-colors"
                                     >
                                         Add Friend
                                     </button>
@@ -872,7 +865,7 @@ export default function ProfilePage() {
                 <div className="mt-12 flex justify-center">
                     <button
                         onClick={handleLogout}
-                        className="px-8 py-3 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95"
+                        className="px-8 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 font-medium hover:bg-red-500/20 transition-colors"
                     >
                         Log Out
                     </button>
@@ -891,7 +884,7 @@ export default function ProfilePage() {
             {/* 💳 Capital One Simulated OAuth Modal */}
             {showCapOneModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white w-96 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,72,121,0.3)] animate-in zoom-in-95 duration-300">
+                    <div className="bg-white w-96 rounded-2xl overflow-hidden shadow-2xl">
                         
                         {/* Capital One Brand Header */}
                         <div className="bg-[#004879] p-6 text-center relative">

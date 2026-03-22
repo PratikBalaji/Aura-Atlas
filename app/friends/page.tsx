@@ -350,12 +350,9 @@ export default function FriendsPage() {
     return (
         <div className="min-h-screen bg-[#050913] page-enter">
             <div className="mx-auto max-w-3xl px-4 pb-8 pt-24 sm:px-6">
-                {/* Header */}
                 <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                        <span className="bg-gradient-to-r from-teal-400 to-purple-400 bg-clip-text text-transparent">
-                            Friends & Leaderboard
-                        </span>
+                    <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                        Friends & Leaderboard
                     </h1>
                     <p className="mt-2 text-sm text-slate-400">
                         Connect, support each other, and stay motivated together
@@ -377,7 +374,7 @@ export default function FriendsPage() {
                     <button
                         type="submit"
                         disabled={isAdding || !searchCode.trim()}
-                        className="rounded-2xl bg-gradient-to-r from-teal-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-500/15 hover:shadow-teal-500/25 transition-all disabled:opacity-40 active:scale-[0.97]"
+                        className="rounded-2xl bg-teal-600 hover:bg-teal-500 px-6 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-40"
                     >
                         {isAdding ? "Sending..." : "Add Friend"}
                     </button>
@@ -399,12 +396,12 @@ export default function FriendsPage() {
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab
-                                ? "bg-gradient-to-r from-teal-500/20 to-indigo-500/20 text-white border border-teal-500/20"
+                            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab
+                                ? "bg-white/[0.08] text-white border border-white/[0.08]"
                                 : "text-slate-400 hover:text-white"
                                 }`}
                         >
-                            {tab === "friends" ? "👥 Friends" : "🏆 Leaderboard"}
+                            {tab === "friends" ? "Friends" : "Leaderboard"}
                         </button>
                     ))}
                 </div>
@@ -418,13 +415,13 @@ export default function FriendsPage() {
                     <div className="space-y-6">
                         {/* New Pending Connections UI */}
                         {(incomingRequests.length > 0 || outgoingRequests.length > 0) && (
-                            <div className="bg-white/5 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl mb-6">
+                            <div className="border border-white/[0.08] bg-white/[0.03] rounded-2xl p-6 mb-6">
                                 <h2 className="text-xl font-semibold text-white mb-4">Pending Connections</h2>
 
                                 <AnimatePresence>
                                     {incomingRequests.length > 0 && (
                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-4">
-                                            <h3 className="text-xs uppercase tracking-widest text-emerald-400 mb-2 font-semibold">Incoming</h3>
+                                            <h3 className="text-xs uppercase tracking-wider text-emerald-400 mb-2 font-medium">Incoming</h3>
                                             <div className="space-y-3">
                                                 {incomingRequests.map((req) => (
                                                     <motion.div
@@ -469,16 +466,16 @@ export default function FriendsPage() {
                                                             <button
                                                                 onClick={() => handleAcceptRequest(req.id)}
                                                                 disabled={processingId === req.id}
-                                                                className="rounded-lg bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/40 hover:shadow-[0_0_15px_rgba(52,211,153,0.4)] transition-all disabled:opacity-50 flex items-center gap-1"
+                                                                className="rounded-lg bg-emerald-500/15 border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
                                                             >
-                                                                ✅ Accept
+                                                                Accept
                                                             </button>
                                                             <button
                                                                 onClick={() => handleWithdrawOrReject(req.id)}
                                                                 disabled={processingId === req.id}
-                                                                className="rounded-lg bg-black/40 border border-red-900/40 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50 flex items-center gap-1"
+                                                                className="rounded-lg bg-white/[0.03] border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-colors disabled:opacity-50"
                                                             >
-                                                                ❌ Decline
+                                                                Decline
                                                             </button>
                                                         </div>
                                                     </motion.div>
@@ -488,7 +485,7 @@ export default function FriendsPage() {
                                     )}
                                     {outgoingRequests.length > 0 && (
                                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                            <h3 className="text-xs uppercase tracking-widest text-slate-400 mb-2 font-semibold">Outgoing</h3>
+                                            <h3 className="text-xs uppercase tracking-wider text-slate-400 mb-2 font-medium">Outgoing</h3>
                                             <div className="space-y-3">
                                                 {outgoingRequests.map((req) => (
                                                     <motion.div
@@ -534,7 +531,7 @@ export default function FriendsPage() {
                                                             disabled={processingId === req.id}
                                                             className="shrink-0 rounded-lg bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-slate-700 transition-all disabled:opacity-50 flex items-center gap-1"
                                                         >
-                                                            ↩️ Withdraw
+                                                            Withdraw
                                                         </button>
                                                     </motion.div>
                                                 ))}
@@ -614,7 +611,7 @@ export default function FriendsPage() {
                         {sentRequests.length > 0 && (
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
-                                    <span>📤</span> Sent Requests ({sentRequests.length})
+                                    Sent Requests ({sentRequests.length})
                                 </h3>
                                 <div className="space-y-2">
                                     {sentRequests.map((req) => (
@@ -670,19 +667,17 @@ export default function FriendsPage() {
                         {/* Friends List */}
                         <div>
                             <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                                <span>💚</span> Friends ({acceptedFriends.length})
+                                Friends ({acceptedFriends.length})
                             </h3>
                             {acceptedFriends.length === 0 ? (
                                 <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 text-center">
-                                    <div className="text-3xl mb-2">🤝</div>
                                     <p className="text-slate-400 text-sm">
-                                        No friends yet. Add someone by their username or anonymous code!
+                                        No friends yet. Add someone by their username or anonymous code.
                                     </p>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
                                     {acceptedFriends.map((friend) => {
-                                        // ✨ THE EXACT MATH: 30 Points per entry!
                                         const calculatedPoints = friend.entry_count * 30;
                                         
                                         return (
@@ -730,13 +725,12 @@ export default function FriendsPage() {
                                                 </div>
 
                                                 <div className="flex items-center gap-4">
-                                                    {/* The Gamified Smile Points (Calculated from entries for instant update) */}
                                                     <div className="text-right">
-                                                        <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-rose-400 drop-shadow-md animate-fade-in">
+                                                        <div className="text-xl font-semibold text-white tabular-nums">
                                                             {calculatedPoints}
                                                         </div>
-                                                        <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-1">
-                                                            Smile Points
+                                                        <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">
+                                                            Points
                                                         </div>
                                                     </div>
 
@@ -767,9 +761,8 @@ export default function FriendsPage() {
                         initial={{ x: 300, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: 300, opacity: 0 }}
-                        className="fixed top-24 right-6 z-[200] bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl border-l-4 border-emerald-400 flex items-center gap-3 font-medium backdrop-blur-md"
+                        className="fixed top-24 right-6 z-[200] bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 font-medium text-sm"
                     >
-                        <span className="text-xl">✅</span>
                         {toast.message}
                     </motion.div>
                 )}
